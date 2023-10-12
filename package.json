@@ -6,7 +6,7 @@
   "type": "module",
   "bin": "src/index.js",
   "scripts": {
-    "start": "tape test/make-tap.js | node test/use-reader.js",
+    "start": "tape test/make-tap.js | node test/table-reporter.js",
     "test": "tape test/**/*-test.js"
   },
   "author": "tbeseda",
