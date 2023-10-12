@@ -10,14 +10,17 @@ const passing = {};
 const failures = {};
 const summary = {
   // plan: null,
+  badPlan: false,
   tests: 0,
   pass: 0,
   fail: 0,
+  todo: 0,
+  skip: 0,
 }
 let BAIL = false;
 let recentId;
-let failureOpen = false;
 let recentFailType;
+let failureOpen = false;
 
 function TapReader({ input, bail = false }) {
   if (!input) throw new Error('input stream required');
@@ -46,9 +49,11 @@ function parseLine(line) {
     if (desc.endsWith(' # TODO')) {
       desc = desc.substring(0, desc.length - 7);
       todo = true;
+      summary.todo++;
     } else if (desc.endsWith(' # SKIP')) {
       desc = desc.substring(0, desc.length - 7);
       skip = true;
+      summary.skip++;
     }
 
     passing[`id:${id}`] = { id, desc, skip, todo };
@@ -61,9 +66,13 @@ function parseLine(line) {
     if (desc.endsWith(' # TODO')) {
       desc = desc.substring(0, desc.length - 7);
       todo = true;
+      summary.todo++;
     } else if (desc.endsWith(' # SKIP')) {
       desc = desc.substring(0, desc.length - 7);
       skip = true;
+      summary.skip++;
+    } else if (desc === 'plan != count') {
+      summary.badPlan = true;
     }
 
     recentId = id;
@@ -162,8 +171,6 @@ function parseLine(line) {
 function close() { // done + end
   events.emit('done', { lines, summary, passing, failures });
   events.emit('end');
-  // console.log({ summary, passing, });
-  // console.log(failures)
 }
 
 export default TapReader;

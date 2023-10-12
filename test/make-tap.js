@@ -45,7 +45,7 @@ test(
 )
 
 test('Some failing tests', (t) => {
-  t.plan(3)
+  t.plan(3) // ! incorrect count is intentional
 
   t.equal(7 * 8 + 10, 666)
   t.equal('Bad dog', 'Good dog')
@@ -63,4 +63,18 @@ test('Some failing tests', (t) => {
     )
     st.end()
   })
+
+  t.equal(
+    `
+
+    actual
+
+    `,
+    `
+
+    expected
+
+    `,
+    'A long string equal failure'
+  )
 })
