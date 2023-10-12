@@ -54,39 +54,32 @@ function parseLine(line) {
     const version = line.split(' ').pop();
     events.emit('version', { line, version });
   } else if (line.startsWith('ok')) { // pass
-    let [_, id, desc, reason] = line.match(/^ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(.*))?$/) || [];
-    let todo = false;
-    let skip = false;
+    let [_, id, desc, directive] = line.match(/^ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(TODO|SKIP))?$/) || [];
+    const pass = { line, id, desc }
 
-    if (reason === 'TODO') {
-      todo = true;
-      summary.todo++;
-    } else if (reason === 'SKIP') {
-      skip = true;
-      summary.skip++;
+    if (directive) {
+      directive = directive.trim().toLowerCase();
+      pass[directive] = true;
+      summary[directive] = (summary[directive] || 0) + 1;
     }
 
-    passing[`id:${id}`] = { id, desc, skip, todo };
-    events.emit('pass', { line, id, desc, skip, todo });
+    passing[`id:${id}`] = pass;
+    events.emit('pass', pass);
   } else if (line.startsWith('not ok')) { // fail
-    let [_, id, desc, reason] = line.match(/^not ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(.*))?$/) || [];
-    let todo = false;
-    let skip = false;
+    let [_, id, desc, directive] = line.match(/^not ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(TODO|SKIP))?$/) || [];
+    const fail = { line, lines: [line], id, desc }
 
-    if (reason === 'TODO') {
-      todo = true;
-      summary.todo++;
-    } else if (reason === 'SKIP') {
-      skip = true;
-      summary.skip++;
-    } else if (desc === 'plan != count') {
-      summary.plan.bad = true;
+    if (directive) {
+      directive = directive.trim().toLowerCase();
+      fail[directive] = true;
+      summary[directive] = (summary[directive] || 0) + 1;
     }
 
+    if (desc === 'plan != count') summary.plan.bad = true;
     recentId = id;
     recentFailDiag = null;
     ok = false;
-    failures[`id:${id}`] = { id, desc, skip, todo, lines: [line] };
+    failures[`id:${id}`] = fail;
   } else if (/^\s+-{3}$/.test(line)) { // failure YAML open
     YAMLing = true;
     failures[`id:${recentId}`].lines.push(line);
