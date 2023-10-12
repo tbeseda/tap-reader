@@ -1,7 +1,8 @@
 // * https://testanything.org/tap-version-14-specification.html
 // TODO: handle other TAP producers
-// TODO: subtest (TAP 14?)
+// TODO: subtest (TAP 14?) "# Subtest: <name>"
 // TODO: explicit "Bail out!" in TAP output
+// TODO: +bail pragma
 
 import { createInterface } from 'readline';
 import { EventEmitter } from 'events';
@@ -80,10 +81,12 @@ function parseLine(line) {
     recentFailDiag = null;
     ok = false;
     failures[`id:${id}`] = fail;
-  } else if (/^\s+-{3}$/.test(line)) { // failure YAML open
+  } else if (/^\s{2}-{3}$/.test(line)) { // failure YAML open
     YAMLing = true;
     failures[`id:${recentId}`].lines.push(line);
   } else if ((/^\s+(operator|expected|actual|stack):.+$/).test(line)) { // failure YAML
+    // ! this is too tape-specific
+    // TODO: handle as YAML in `if (YAMLing)`
     if (!YAMLing) throw new Error('YAML block not open');
 
     const failure = failures[`id:${recentId}`];
@@ -99,19 +102,19 @@ function parseLine(line) {
 
     failure.lines.push(line);
   } else if (/^\s+Error: |^\s+at |^\s{6}/.test(line)) { // tape stack trace
+    // TODO: handle as YAML in `if (YAMLing)`
     if (!YAMLing) throw new Error('YAML block not open');
 
     const failure = failures[`id:${recentId}`];
 
     failure[recentFailDiag].push(line);
     failure.lines.push(line);
-  } else if (/^\s+\.{3}$/.test(line)) { // failure close
+  } else if (/^\s{2}\.{3}$/.test(line)) { // failure close
     if (!YAMLing) throw new Error('YAML block not open');
 
     // TODO: bail option
 
     const failure = failures[`id:${recentId}`];
-    const { id, desc, operator, skip, todo } = failure;
     failure.lines.push(line);
 
     if (Array.isArray(failure.expected)) {
@@ -128,46 +131,36 @@ function parseLine(line) {
     }
 
     YAMLing = false;
-    events.emit('fail', {
-      line,
-      id,
-      desc,
-      skip,
-      todo,
-      operator,
-      actual: failure.actual,
-      expected: failure.expected,
-      stack: failure.stack
-    });
+    events.emit('fail', failure);
   } else if (line.startsWith('1..')) { // plan
     // TODO: handle "1..n # Reason"
     const plan = line.split('..').map(Number);
     // TODO: handle plan[1] === '0' -- equivalent to SKIP
     summary.plan.count = plan;
     events.emit('plan', { line, plan, bad: summary.plan.bad });
-  } else if ((/^# (tests|pass|fail)/).test(line)) { // summary count
-    let [_, type, count] = line.match(/^# (tests|pass|fail)\s+(\d+)/) || [];
-    if (type && count) {
-      count = Number(count)
-      summary[type] = count;
-      events.emit('count', { line, type, count });
-    } else {
-      // ! idk
-    }
   } else if (line.startsWith('# ')) { // comment
-    let comment = line.substring(2);
-    let todo = false;
-    let skip = false;
+    if ((/^# (tests|pass|fail)/).test(line)) { // tape-specific: summary count
+      let [_, type, count] = line.match(/^# (tests|pass|fail)\s+(\d+)/) || [];
+      if (type && count) {
+        count = Number(count)
+        summary[type] = count;
+        events.emit('count', { line, type, count });
+      }
+    } else {
+      let comment = line.substring(2);
+      let todo = false;
+      let skip = false;
 
-    if (comment.startsWith('TODO ')) {
-      comment = comment.substring(5);
-      todo = true;
-    } else if (comment.startsWith('SKIP ')) {
-      comment = comment.substring(5);
-      skip = true;
+      if (comment.startsWith('TODO ')) {
+        comment = comment.substring(5);
+        todo = true;
+      } else if (comment.startsWith('SKIP ')) {
+        comment = comment.substring(5);
+        skip = true;
+      }
+
+      events.emit('comment', { line, comment, todo, skip });
     }
-
-    events.emit('comment', { line, comment, todo, skip });
   } else { // other
     events.emit('other', { line });
   }
