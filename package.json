@@ -6,13 +6,14 @@
   "type": "module",
   "bin": "src/index.js",
   "scripts": {
-    "start": "tape 'test/make-tap.js' | node src/index.js",
-    "test": "tape 'test/**/*-test.js' | tap-arc"
+    "start": "tape test/make-tap.js | node test/use-reader.js",
+    "test": "tape test/**/*-test.js | tap-arc"
   },
   "author": "tbeseda",
   "license": "Apache-2.0",
   "devDependencies": {
-    "tap-arc": "^1.0.2",
+    "cli-table3": "^0.6.3",
+    "tap-arc": "^1.1.0-RC2",
     "tape": "^5.7.0"
   }
 }
