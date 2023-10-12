@@ -3,7 +3,7 @@ import test from 'tape'
 test('Sample passing tests', (t) => {
   t.plan(3)
 
-  t.deepEqual([3, 4, 5], [3, 4, 2 + 3], 'A deeply equal array')
+  t.deepEqual([3, 4, 5], [3, 4, 2 + 3], ' - A deeply equal array')
   t.skip('A skipped test')
   t.deepEqual({ a: 7, b: [8, 9] }, { a: 3 + 4, b: [8, 9] }, 'A deeply equal object')
 
@@ -47,8 +47,8 @@ test(
 test('Some failing tests', (t) => {
   t.plan(3) // ! incorrect count is intentional
 
-  t.equal(7 * 8 + 10, 666)
-  t.equal('Bad dog', 'Good dog')
+  t.equal(7 * 8 + 10, 666, 'A failing number equal')
+  t.equal('Bad dog', 'Good dog', 'A failing string equal')
 
   t.test('Nested tests', (st) => {
     st.deepEqual(

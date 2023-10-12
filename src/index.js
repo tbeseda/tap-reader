@@ -1,4 +1,7 @@
+// * https://testanything.org/tap-version-14-specification.html
+// TODO: handle other TAP producers
 // TODO: subtest (TAP 14?)
+// TODO: explicit "Bail out!" in TAP output
 
 import { createInterface } from 'readline';
 import { EventEmitter } from 'events';
@@ -9,8 +12,7 @@ const lines = [];
 const passing = {};
 const failures = {};
 const summary = {
-  // plan: null,
-  badPlan: false,
+  plan: { bad: false },
   tests: 0,
   pass: 0,
   fail: 0,
@@ -18,9 +20,11 @@ const summary = {
   skip: 0,
 }
 let BAIL = false;
+let ok = false;
 let recentId;
-let recentFailType;
-let failureOpen = false;
+let recentFailDiag;
+let YAMLing = false;
+let YAMLchomping = false;
 
 function TapReader({ input, bail = false }) {
   if (!input) throw new Error('input stream required');
@@ -38,74 +42,80 @@ function TapReader({ input, bail = false }) {
 function parseLine(line) {
   lines.push(line);
 
+  // if (YAMLing) {
+  //   if (YAMLchomping) {
+  //     failures[`id:${recentId}`][recentFailDiag].push(line);
+  //   } else {
+  //     failures[`id:${recentId}`][recentFailDiag] += line;
+  //   }
+  //   return;
+  // }
   if (line.startsWith('TAP version ')) { // version
     const version = line.split(' ').pop();
     events.emit('version', { line, version });
-  } else if (line.startsWith('ok ')) { // pass
-    let [_, id, desc] = line.match(/^ok\s+(\d+)\s+(.*)/) || [];
+  } else if (line.startsWith('ok')) { // pass
+    let [_, id, desc, reason] = line.match(/^ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(.*))?$/) || [];
     let todo = false;
     let skip = false;
 
-    if (desc.endsWith(' # TODO')) {
-      desc = desc.substring(0, desc.length - 7);
+    if (reason === 'TODO') {
       todo = true;
       summary.todo++;
-    } else if (desc.endsWith(' # SKIP')) {
-      desc = desc.substring(0, desc.length - 7);
+    } else if (reason === 'SKIP') {
       skip = true;
       summary.skip++;
     }
 
     passing[`id:${id}`] = { id, desc, skip, todo };
     events.emit('pass', { line, id, desc, skip, todo });
-  } else if (line.startsWith('not ok ')) { // fail
-    let [_, id, desc] = line.match(/^not ok\s+(\d+)\s+(.*)/) || [];
+  } else if (line.startsWith('not ok')) { // fail
+    let [_, id, desc, reason] = line.match(/^not ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(.*))?$/) || [];
     let todo = false;
     let skip = false;
 
-    if (desc.endsWith(' # TODO')) {
-      desc = desc.substring(0, desc.length - 7);
+    if (reason === 'TODO') {
       todo = true;
       summary.todo++;
-    } else if (desc.endsWith(' # SKIP')) {
-      desc = desc.substring(0, desc.length - 7);
+    } else if (reason === 'SKIP') {
       skip = true;
       summary.skip++;
     } else if (desc === 'plan != count') {
-      summary.badPlan = true;
+      summary.plan.bad = true;
     }
 
     recentId = id;
+    recentFailDiag = null;
+    ok = false;
     failures[`id:${id}`] = { id, desc, skip, todo, lines: [line] };
-  } else if (line.startsWith('  ---')) { // failure open
-    failureOpen = true;
+  } else if (/^\s+-{3}$/.test(line)) { // failure YAML open
+    YAMLing = true;
     failures[`id:${recentId}`].lines.push(line);
-  } else if ((/^\s{4}(operator|expected|actual|stack):/).test(line)) {
-    if (!failureOpen) throw new Error('failure diagnostic not open');
+  } else if ((/^\s+(operator|expected|actual|stack):.+$/).test(line)) { // failure YAML
+    if (!YAMLing) throw new Error('YAML block not open');
 
     const failure = failures[`id:${recentId}`];
     const [_, type, remainder] = line.match(/^\s+(operator|expected|actual|stack):\s+(.*)/) || [];
-    const hasMore = remainder === '|-';
+    YAMLchomping = remainder === '|-'; // YAML block chomp
 
-    if (!hasMore) {
-      failure[type] = remainder;
+    if (YAMLchomping) {
+      recentFailDiag = type;
+      failure[type] = [line]; // start array
     } else {
-      recentFailType = type;
-      failure[type] = [line];
+      failure[type] = remainder;
     }
 
     failure.lines.push(line);
-  } else if (/^\s{6}/.test(line)) { // failure diag
-    if (!failureOpen) throw new Error('failure diagnostic not open');
+  } else if (/^\s+Error: |^\s+at |^\s{6}/.test(line)) { // tape stack trace
+    if (!YAMLing) throw new Error('YAML block not open');
 
     const failure = failures[`id:${recentId}`];
 
-    failure[recentFailType].push(line);
+    failure[recentFailDiag].push(line);
     failure.lines.push(line);
-  } else if (line.startsWith('  ...')) { // failure close
-    if (!failureOpen) throw new Error('failure diagnostic not open');
+  } else if (/^\s+\.{3}$/.test(line)) { // failure close
+    if (!YAMLing) throw new Error('YAML block not open');
 
-    // TODO: optional bail
+    // TODO: bail option
 
     const failure = failures[`id:${recentId}`];
     const { id, desc, operator, skip, todo } = failure;
@@ -124,7 +134,7 @@ function parseLine(line) {
       failure.stack = rest.map(l => l.substring(6)).join('\n');
     }
 
-    failureOpen = false;
+    YAMLing = false;
     events.emit('fail', {
       line,
       id,
@@ -137,9 +147,11 @@ function parseLine(line) {
       stack: failure.stack
     });
   } else if (line.startsWith('1..')) { // plan
+    // TODO: handle "1..n # Reason"
     const plan = line.split('..').map(Number);
-    summary.plan = plan;
-    events.emit('plan', { line, plan });
+    // TODO: handle plan[1] === '0' -- equivalent to SKIP
+    summary.plan.count = plan;
+    events.emit('plan', { line, plan, bad: summary.plan.bad });
   } else if ((/^# (tests|pass|fail)/).test(line)) { // summary count
     let [_, type, count] = line.match(/^# (tests|pass|fail)\s+(\d+)/) || [];
     if (type && count) {
@@ -169,8 +181,8 @@ function parseLine(line) {
 }
 
 function close() { // done + end
-  events.emit('done', { lines, summary, passing, failures });
-  events.emit('end');
+  events.emit('done', { lines, summary, passing, failures, ok });
+  events.emit('end', { ok });
 }
 
 export default TapReader;

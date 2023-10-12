@@ -35,6 +35,14 @@ reader.on('fail', ({ id, desc, operator, actual, expected, skip, todo, stack }) 
   table.push([null, null, null, `stack: \n${stack}`]);
 });
 
+reader.on('plan', ({ plan, bad }) => {
+  table.push(['PLAN', null, null, `plan: ${plan[0]} → ${plan[1]} ${bad ? '(BAD)' : ''}`]);
+})
+
+reader.on('count', ({ type, count }) => {
+  table.push(['COUNT', null, null, `${type}: ${count}`]);
+})
+
 reader.on('comment', ({ comment, todo, skip }) => {
   table.push(['COMMENT', null, todo ? 'TODO' : skip ? 'SKIP' : null, comment]);
 })
@@ -44,16 +52,17 @@ reader.on('other', ({ line }) => {
     table.push(['OTHER', null, null, line]);
 })
 
-reader.on('done', ({ summary }) => {
-  const { plan, badPlan, tests, pass, fail, skip, todo } = summary;
+reader.on('done', ({ summary, ok }) => {
+  const { skip, todo } = summary;
   table.push(
-    ['DONE', null, null, `plan: ${plan[0]} → ${plan[1]} (${badPlan ? 'bad' : 'good'})`],
-    [null, null, null, `tests: ${tests}`],
-    [null, null, null, `pass: ${pass}`],
-    [null, null, null, `fail: ${fail}`],
-    [null, null, null, `skip: ${skip}`],
+    ['DONE', null, null, `skip: ${skip}`],
     [null, null, null, `todo: ${todo}`],
+    ['OK', null, null, `${ok}`],
   );
+})
+
+reader.on('end', ({ ok }) => {
   write(table.toString());
   write('\n');
+  process.exit(ok ? 0 : 1);
 })
