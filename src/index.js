@@ -27,31 +27,53 @@ let recentFailDiag;
 let YAMLing = false;
 let YAMLchomping = false;
 
-function TapReader({ input, bail = false }) {
-  if (!input) throw new Error('input stream required');
-
-  BAIL = bail;
-  events = new EventEmitter();
-  readline = createInterface({ input });
-
-  readline.on('line', parseLine);
-  readline.on('close', close);
-
-  return events;
-}
-
 function parseLine(line) {
   lines.push(line);
 
-  // if (YAMLing) {
-  //   if (YAMLchomping) {
-  //     failures[`id:${recentId}`][recentFailDiag].push(line);
-  //   } else {
-  //     failures[`id:${recentId}`][recentFailDiag] += line;
-  //   }
-  //   return;
-  // }
-  if (line.startsWith('TAP version ')) { // version
+  if (YAMLing) {
+    const failure = failures[`id:${recentId}`];
+
+    if (/^\s{2}\.{3}$/.test(line)) { // "  ..." failure close
+      // TODO: bail option
+
+      YAMLing = false;
+      YAMLchomping = false;
+
+      failure.lines.push(line);
+
+      if (Array.isArray(failure.expected)) {
+        const [_, ...rest] = failure.expected;
+        failure.expected = rest.map(l => l.trim()).join('\n');
+      }
+      if (Array.isArray(failure.actual)) {
+        const [_, ...rest] = failure.actual;
+        failure.actual = rest.map(l => l.trim()).join('\n');
+      }
+      if (failure.stack) {
+        const [_, ...rest] = failure.stack;
+        failure.stack = rest.map(l => l.substring(6)).join('\n');
+      }
+
+      events.emit('fail', failure);
+    } else if ((/^\s+(operator|expected|actual|stack):.+$/).test(line)) { // YAML key
+      const [_, type, remainder] = line.match(/^\s+(operator|expected|actual|stack):\s+(.*)$/) || [];
+      YAMLchomping = remainder === '|-'; // YAML block chomp
+
+      if (YAMLchomping) {
+        recentFailDiag = type;
+        failure[type] = [line]; // start array
+      } else {
+        failure[type] = remainder;
+      }
+
+      failure.lines.push(line);
+    } else if (YAMLchomping) {
+      failure[recentFailDiag].push(line);
+      failure.lines.push(line);
+    } else {
+      console.log('shit')
+    }
+  } else if (line.startsWith('TAP version ')) { // version
     const version = line.split(' ').pop();
     events.emit('version', { line, version });
   } else if (line.startsWith('ok')) { // pass
@@ -81,57 +103,9 @@ function parseLine(line) {
     recentFailDiag = null;
     ok = false;
     failures[`id:${id}`] = fail;
-  } else if (/^\s{2}-{3}$/.test(line)) { // failure YAML open
+  } else if (/^\s{2}-{3}$/.test(line)) { // "  ---" failure YAML open
     YAMLing = true;
     failures[`id:${recentId}`].lines.push(line);
-  } else if ((/^\s+(operator|expected|actual|stack):.+$/).test(line)) { // failure YAML
-    // ! this is too tape-specific
-    // TODO: handle as YAML in `if (YAMLing)`
-    if (!YAMLing) throw new Error('YAML block not open');
-
-    const failure = failures[`id:${recentId}`];
-    const [_, type, remainder] = line.match(/^\s+(operator|expected|actual|stack):\s+(.*)/) || [];
-    YAMLchomping = remainder === '|-'; // YAML block chomp
-
-    if (YAMLchomping) {
-      recentFailDiag = type;
-      failure[type] = [line]; // start array
-    } else {
-      failure[type] = remainder;
-    }
-
-    failure.lines.push(line);
-  } else if (/^\s+Error: |^\s+at |^\s{6}/.test(line)) { // tape stack trace
-    // TODO: handle as YAML in `if (YAMLing)`
-    if (!YAMLing) throw new Error('YAML block not open');
-
-    const failure = failures[`id:${recentId}`];
-
-    failure[recentFailDiag].push(line);
-    failure.lines.push(line);
-  } else if (/^\s{2}\.{3}$/.test(line)) { // failure close
-    if (!YAMLing) throw new Error('YAML block not open');
-
-    // TODO: bail option
-
-    const failure = failures[`id:${recentId}`];
-    failure.lines.push(line);
-
-    if (Array.isArray(failure.expected)) {
-      const [_, ...rest] = failure.expected;
-      failure.expected = rest.map(l => l.trim()).join('\n');
-    }
-    if (Array.isArray(failure.actual)) {
-      const [_, ...rest] = failure.actual;
-      failure.actual = rest.map(l => l.trim()).join('\n');
-    }
-    if (failure.stack) {
-      const [_, ...rest] = failure.stack;
-      failure.stack = rest.map(l => l.substring(6)).join('\n');
-    }
-
-    YAMLing = false;
-    events.emit('fail', failure);
   } else if (line.startsWith('1..')) { // plan
     // TODO: handle "1..n # Reason"
     const plan = line.split('..').map(Number);
@@ -169,6 +143,19 @@ function parseLine(line) {
 function close() { // done + end
   events.emit('done', { lines, summary, passing, failures, ok });
   events.emit('end', { ok });
+}
+
+function TapReader({ input, bail = false }) {
+  if (!input) throw new Error('input stream required');
+
+  BAIL = bail;
+  events = new EventEmitter();
+  readline = createInterface({ input });
+
+  readline.on('line', parseLine);
+  readline.on('close', close);
+
+  return events;
 }
 
 export default TapReader;
