@@ -38,7 +38,7 @@ function parseLine(line) {
     // recent failure doesn't have diag, emit recent failure
     const failure = failures[`id:${recentId}`];
     events.emit('fail', failure);
-    if (BAIL) bail();
+    if (BAIL) bail({ reason: 'Pessimistic failure' });
   }
 
   if (YAMLing) {
@@ -57,7 +57,7 @@ function parseLine(line) {
       YAMLblock.push(line)
     }
   } else if (line.indexOf('Bail out!') >= 0) { // "Bail out!"
-    bail();
+    bail({ reason: '"Bail out!"' });
   } else if (line.startsWith('TAP version ')) { // "TAP version"
     const version = line.split(' ').pop();
     events.emit('version', { line, version });
@@ -119,8 +119,8 @@ function parseLine(line) {
   recentLine = line;
 }
 
-function bail() { // bail
-  events.emit('bail');
+function bail(payload) { // bail
+  events.emit('bail', payload);
   readline.close();
 }
 
