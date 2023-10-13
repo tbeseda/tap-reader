@@ -2,9 +2,12 @@
 
 <p align="center">
   A smol, streaming <a href="https://testanything.org/">TAP</a> parser. Works well with <a href="https://www.npmjs.com/package/tape/"><code>tape</code></a>.<br>
-  <a href="https://www.npmjs.com/package/tap-reader"><strong><code>tap-reader</code> on npmjs.org »</strong></a></br>
+  <a href="https://www.npmjs.com/package/tap-reader"><strong><code>tap-reader</code> on npmjs.org »</strong></a><br>
   Documentation soon...
 </p>
+
+> [!WARNING]  
+> `tap-reader` is pre-release. It's not ready for production use.
 
 Sample reporter that leverages `tap-reader`:
 
