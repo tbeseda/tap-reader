@@ -1,5 +1,4 @@
 // * https://testanything.org/tap-version-14-specification.html
-// TODO: explicit "Bail out!" in TAP output
 // TODO: pragma like +bail
 // TODO: subtest (TAP 14?) "# Subtest: <name>"
 
@@ -39,6 +38,7 @@ function parseLine(line) {
     // recent failure doesn't have diag, emit recent failure
     const failure = failures[`id:${recentId}`];
     events.emit('fail', failure);
+    if (BAIL) bail();
   }
 
   if (YAMLing) {
@@ -47,19 +47,21 @@ function parseLine(line) {
 
     if (/^\s{2}\.{3}$/.test(line)) { // "  ..." YAML block close
       YAMLing = false;
-      // TODO: bail option
 
       failure.diag = parse(YAMLblock.join('\n'));;
 
       events.emit('fail', failure);
+      if (BAIL) bail();
     }
     else {
       YAMLblock.push(line)
     }
-  } else if (line.startsWith('TAP version ')) { // version
+  } else if (line.indexOf('Bail out!') >= 0) { // "Bail out!"
+    bail();
+  } else if (line.startsWith('TAP version ')) { // "TAP version"
     const version = line.split(' ').pop();
     events.emit('version', { line, version });
-  } else if (line.startsWith('ok')) { // pass
+  } else if (line.startsWith('ok')) { // "ok"
     let [_, id, desc, directive] = line.match(/^ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(TODO|SKIP))?$/) || [];
     const pass = { line, id, desc }
 
@@ -71,7 +73,7 @@ function parseLine(line) {
 
     passing[`id:${id}`] = pass;
     events.emit('pass', pass);
-  } else if (line.startsWith('not ok')) { // fail
+  } else if (line.startsWith('not ok')) { // "not ok"
     ok = false;
     let [_, id, desc, directive] = line.match(/^not ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(TODO|SKIP))?$/) || [];
     const failure = { id, desc, line, diag: {}, lines: [line] }
@@ -90,13 +92,13 @@ function parseLine(line) {
     YAMLing = true;
     YAMLblock = [];
     failures[`id:${recentId}`].lines.push(line);
-  } else if (line.startsWith('1..')) { // plan
+  } else if (line.startsWith('1..')) { // "1..N" plan
     // TODO: handle "1..n # Reason"
     const plan = line.split('..').map(Number);
     // TODO: handle plan[1] === '0' -- equivalent to SKIP
     summary.plan.count = plan;
     events.emit('plan', { line, plan, bad: summary.plan.bad });
-  } else if (line.startsWith('# ')) { // comment
+  } else if (line.startsWith('# ')) { // "# " comment
     let comment = line.substring(2);
     let todo = false;
     let skip = false;
@@ -115,6 +117,11 @@ function parseLine(line) {
   }
 
   recentLine = line;
+}
+
+function bail() { // bail
+  events.emit('bail');
+  readline.close();
 }
 
 function close() { // done + end
