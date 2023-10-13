@@ -1,10 +1,16 @@
-# tap-reader
+<h1 align="center"><code>tap-reader</code> 📜</h1>
 
-Sample reporter that leverages `tap-reader`
+<p align="center">
+  A smol, streaming <a href="https://testanything.org/">TAP</a> parser. Works well with <a href="https://www.npmjs.com/package/tape/"><code>tape</code></a>.<br>
+  <a href="https://www.npmjs.com/package/tap-reader"><strong><code>tap-reader</code> on npmjs.org »</strong></a></br>
+  Documentation soon...
+</p>
+
+Sample reporter that leverages `tap-reader`:
 
 ```js
 import { stdin } from 'node:process';
-import TapReader from '../src/index.js'
+import TapReader from 'tap-reader'
 
 const write = console.log
 const reader = TapReader({ input: stdin });
@@ -55,3 +61,22 @@ reader.on('end', ({ ok }) => {
   process.exit(ok ? 0 : 1);
 })
 ```
+
+Also see `test/table-reporter.js` for another example.
+
+## TODO:
+
+- [ ] More TAP features like subtests, +pragmas, etc.
+- [ ] Test with different TAP reporters
+- [ ] Documentation for config and events
+- [ ] Intellisense via `.d.ts`
+
+
+## FAQ:
+
+**Why is `yaml` vendored?**  
+Because the published module is large. `tap-reader` should install and run as quickly as possible in a CI environment.  
+I'm not stoked on it so this may change in the future.
+
+**Why not use `tap-parser`?**  
+`tap-parser` is great but... see above.
