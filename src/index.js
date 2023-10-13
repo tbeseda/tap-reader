@@ -5,9 +5,12 @@
 
 import { createInterface } from 'readline';
 import { EventEmitter } from 'events';
+import { parse } from './vendor/yaml.js';
 
 let events;
 let readline;
+let BAIL = false;
+let ok = false;
 const lines = [];
 const passing = {};
 const failures = {};
@@ -19,60 +22,39 @@ const summary = {
   todo: 0,
   skip: 0,
 }
-let BAIL = false;
-let ok = false;
+
 let recentId;
-let recentFailDiag;
+let recentLine = '';
+let YAMLblock
 let YAMLing = false;
-let YAMLblocking = false;
-let prevIndent = 0;
 
 function parseLine(line) {
   lines.push(line);
-  const indent = line.match(/^\s*/)[0].length;
+
+  if (
+    recentLine.startsWith('not ok')
+    && !/^\s{2}-{3}$/.test(line)
+    && !YAMLing
+  ) {
+    // recent failure doesn't have diag, emit recent failure
+    const failure = failures[`id:${recentId}`];
+    events.emit('fail', failure);
+  }
 
   if (YAMLing) {
     const failure = failures[`id:${recentId}`];
+    failure.lines.push(line);
 
-    if (/^\s{2}\.{3}$/.test(line)) { // "  ..." failure YAML close
+    if (/^\s{2}\.{3}$/.test(line)) { // "  ..." YAML block close
+      YAMLing = false;
       // TODO: bail option
 
-      YAMLing = false;
-      YAMLblocking = false;
-
-      failure.lines.push(line);
-
-      // stringify YAML block scalars
-      Object.keys(failure).filter(k => k !== 'lines').forEach(k => {
-        if (Array.isArray(failure[k])) {
-          const [_, ...rest] = failure[k];
-          const baseIndent = rest[0].match(/^\s*/)[0].length;
-          failure[k] = rest.map(l => l.substring(baseIndent)).join('\n');
-        }
-      });
+      failure.diag = parse(YAMLblock.join('\n'));;
 
       events.emit('fail', failure);
     }
-    // ? maybe collect all YAML and parse on close?
-    else if (YAMLblocking && indent >= prevIndent) {
-      failure[recentFailDiag].push(line);
-      failure.lines.push(line);
-    }
-    else if ((/^\s+([a-zA-Z0-9_]+):.+$/).test(line)) { // YAML key
-      const [_, type, remainder] = line.match(/^\s+([a-zA-Z0-9_]+):\s+(.*)$/) || [];
-      YAMLblocking = remainder.length <= 2 && ['|', '>'].indexOf(remainder.charAt(0)) >= 0;
-
-      if (YAMLblocking) { // YAML block scalar
-        recentFailDiag = type;
-        failure[type] = [line]; // start new array
-      } else {
-        failure[type] = remainder;
-      }
-
-      failure.lines.push(line);
-    }
     else {
-      console.log('weird', { line, indent, prevIndent, YAMLing, YAMLblocking })
+      YAMLblock.push(line)
     }
   } else if (line.startsWith('TAP version ')) { // version
     const version = line.split(' ').pop();
@@ -90,22 +72,23 @@ function parseLine(line) {
     passing[`id:${id}`] = pass;
     events.emit('pass', pass);
   } else if (line.startsWith('not ok')) { // fail
+    ok = false;
     let [_, id, desc, directive] = line.match(/^not ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(TODO|SKIP))?$/) || [];
-    const fail = { line, lines: [line], id, desc }
+    const failure = { id, desc, line, diag: {}, lines: [line] }
 
     if (directive) {
       directive = directive.trim().toLowerCase();
-      fail[directive] = true;
+      failure[directive] = true;
       summary[directive] = (summary[directive] || 0) + 1;
     }
 
-    if (desc === 'plan != count') summary.plan.bad = true;
+    failures[`id:${id}`] = failure;
+
     recentId = id;
-    recentFailDiag = null;
-    ok = false;
-    failures[`id:${id}`] = fail;
-  } else if (/^\s{2}-{3}$/.test(line)) { // "  ---" failure YAML open
+    if (desc === 'plan != count') summary.plan.bad = true;
+  } else if (/^\s{2}-{3}$/.test(line)) { // "  ---" YAML block open
     YAMLing = true;
+    YAMLblock = [];
     failures[`id:${recentId}`].lines.push(line);
   } else if (line.startsWith('1..')) { // plan
     // TODO: handle "1..n # Reason"
@@ -131,7 +114,7 @@ function parseLine(line) {
     events.emit('other', { line });
   }
 
-  prevIndent = indent;
+  recentLine = line;
 }
 
 function close() { // done + end

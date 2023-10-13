@@ -1,6 +1,9 @@
 import Table from 'cli-table3'
 import TapReader from '../src/index.js'
 
+const { stdin, stdout } = process
+const write = stdout.write.bind(stdout)
+const reader = TapReader({ input: stdin });
 const chars = {
   'top': '', 'top-mid': '', 'top-left': '', 'top-right': '',
   'bottom': '', 'bottom-mid': '', 'bottom-left': '', 'bottom-right': '',
@@ -13,22 +16,25 @@ const table = new Table({
   head: ['EVENT', 'ID', 'DIRECTIVE', 'VALUE'],
   chars,
 });
-const write = process.stdout.write.bind(process.stdout)
-const reader = TapReader({ input: process.stdin });
 
-write('\n');
-
-setInterval(() => { write('•') }, 150);
+write(' ');
 
 reader.on('version', ({ version }) => {
+  write('•');
+
   table.push(['VERSION', null, null, version]);
 });
 
 reader.on('pass', ({ id, desc, skip, todo }) => {
+  write('•');
+
   table.push(['PASS', id, todo ? 'TODO' : skip ? 'SKIP' : null, desc]);
 });
 
-reader.on('fail', ({ id, desc, operator, actual, expected, skip, todo, stack }) => {
+reader.on('fail', ({ id, desc, skip, todo, diag }) => {
+  write('•');
+
+  const { operator, expected, actual, stack } = diag;
   table.push(['FAIL', id, todo ? 'TODO' : skip ? 'SKIP' : null, desc]);
   table.push([null, null, null, `operator: ${operator}`]);
   table.push([null, null, null, `expected: ${expected}`]);
@@ -37,32 +43,37 @@ reader.on('fail', ({ id, desc, operator, actual, expected, skip, todo, stack }) 
 });
 
 reader.on('plan', ({ plan, bad }) => {
+  write('•');
+
   table.push(['PLAN', null, null, `plan: ${plan[0]} → ${plan[1]} ${bad ? '(BAD)' : ''}`]);
 })
 
-reader.on('count', ({ type, count }) => {
-})
-
 reader.on('comment', ({ comment, todo, skip }) => {
-  let evcent = 'COMMENT'
+  write('•');
+
+  let event = 'COMMENT'
   let c = comment
   const directive = todo ? 'TODO' : skip ? 'SKIP' : null;
   if ((/^(tests|pass|fail)/).test(comment)) { // tape-specific: summary count
     const [_, type, count] = comment.match(/^(tests|pass|fail)\s+(\d+)/) || [];
     if (type && count) {
-      evcent = 'COUNT'
+      event = 'COUNT'
       c = `${type}: ${count}`;
     }
   }
-  table.push([evcent, null, directive, c]);
+  table.push([event, null, directive, c]);
 })
 
 reader.on('other', ({ line }) => {
+  write('•');
+
   if (line.trim().length > 0)
     table.push(['OTHER', null, null, line]);
 })
 
 reader.on('done', ({ summary, ok }) => {
+  write('•');
+
   const { skip, todo } = summary;
   table.push(
     ['DONE', null, null, `skip: ${skip}`],

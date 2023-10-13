@@ -1,8 +1,3 @@
-# tap-reader
-
-Sample reporter that leverages `tap-reader`
-
-```js
 import { stdin } from 'node:process';
 import TapReader from '../src/index.js'
 
@@ -54,4 +49,3 @@ reader.on('done', ({ summary, ok }) => {
 reader.on('end', ({ ok }) => {
   process.exit(ok ? 0 : 1);
 })
-```

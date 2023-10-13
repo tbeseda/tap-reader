@@ -5,6 +5,9 @@
   "main": "src/index.js",
   "type": "module",
   "bin": "src/index.js",
+  "files": [
+    "src"
+  ],
   "scripts": {
     "start": "tape test/make-tap.js | node test/table-reporter.js",
     "test": "tape test/**/*-test.js"
@@ -13,6 +16,13 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "cli-table3": "^0.6.3",
-    "tape": "^5.7.0"
+    "tape": "^5.7.0",
+    "vendurl": "^0.1.1"
+  },
+  "vendurl": {
+    "destination": "src/vendor",
+    "packages": {
+      "yaml.js": "https://esm.sh/v133/yaml@2.3.2/es2021/yaml.bundle.mjs"
+    }
   }
 }
