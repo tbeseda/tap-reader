@@ -21,12 +21,12 @@ test(
 )
 
 test('A slow test', async (t) => {
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  t.pass('100ms passing test')
-  await new Promise((resolve) => setTimeout(resolve, 75))
-  t.pass('75ms passing test')
-  await new Promise((resolve) => setTimeout(resolve, 50))
-  t.pass('50ms passing test')
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+  t.pass('1s passing test')
+  await new Promise((resolve) => setTimeout(resolve, 1500))
+  t.pass('1.5s passing test')
+  await new Promise((resolve) => setTimeout(resolve, 500))
+  t.pass('500ms passing test')
   t.end()
 })
 

@@ -1,8 +1,7 @@
 // * https://testanything.org/tap-version-14-specification.html
-// TODO: handle other TAP producers
-// TODO: subtest (TAP 14?) "# Subtest: <name>"
 // TODO: explicit "Bail out!" in TAP output
-// TODO: +bail pragma
+// TODO: pragma like +bail
+// TODO: subtest (TAP 14?) "# Subtest: <name>"
 
 import { createInterface } from 'readline';
 import { EventEmitter } from 'events';
@@ -25,53 +24,55 @@ let ok = false;
 let recentId;
 let recentFailDiag;
 let YAMLing = false;
-let YAMLchomping = false;
+let YAMLblocking = false;
+let prevIndent = 0;
 
 function parseLine(line) {
   lines.push(line);
+  const indent = line.match(/^\s*/)[0].length;
 
   if (YAMLing) {
     const failure = failures[`id:${recentId}`];
 
-    if (/^\s{2}\.{3}$/.test(line)) { // "  ..." failure close
+    if (/^\s{2}\.{3}$/.test(line)) { // "  ..." failure YAML close
       // TODO: bail option
 
       YAMLing = false;
-      YAMLchomping = false;
+      YAMLblocking = false;
 
       failure.lines.push(line);
 
-      if (Array.isArray(failure.expected)) {
-        const [_, ...rest] = failure.expected;
-        failure.expected = rest.map(l => l.trim()).join('\n');
-      }
-      if (Array.isArray(failure.actual)) {
-        const [_, ...rest] = failure.actual;
-        failure.actual = rest.map(l => l.trim()).join('\n');
-      }
-      if (failure.stack) {
-        const [_, ...rest] = failure.stack;
-        failure.stack = rest.map(l => l.substring(6)).join('\n');
-      }
+      // stringify YAML block scalars
+      Object.keys(failure).filter(k => k !== 'lines').forEach(k => {
+        if (Array.isArray(failure[k])) {
+          const [_, ...rest] = failure[k];
+          const baseIndent = rest[0].match(/^\s*/)[0].length;
+          failure[k] = rest.map(l => l.substring(baseIndent)).join('\n');
+        }
+      });
 
       events.emit('fail', failure);
-    } else if ((/^\s+(operator|expected|actual|stack):.+$/).test(line)) { // YAML key
-      const [_, type, remainder] = line.match(/^\s+(operator|expected|actual|stack):\s+(.*)$/) || [];
-      YAMLchomping = remainder === '|-'; // YAML block chomp
+    }
+    // ? maybe collect all YAML and parse on close?
+    else if (YAMLblocking && indent >= prevIndent) {
+      failure[recentFailDiag].push(line);
+      failure.lines.push(line);
+    }
+    else if ((/^\s+([a-zA-Z0-9_]+):.+$/).test(line)) { // YAML key
+      const [_, type, remainder] = line.match(/^\s+([a-zA-Z0-9_]+):\s+(.*)$/) || [];
+      YAMLblocking = remainder.length <= 2 && ['|', '>'].indexOf(remainder.charAt(0)) >= 0;
 
-      if (YAMLchomping) {
+      if (YAMLblocking) { // YAML block scalar
         recentFailDiag = type;
-        failure[type] = [line]; // start array
+        failure[type] = [line]; // start new array
       } else {
         failure[type] = remainder;
       }
 
       failure.lines.push(line);
-    } else if (YAMLchomping) {
-      failure[recentFailDiag].push(line);
-      failure.lines.push(line);
-    } else {
-      console.log('shit')
+    }
+    else {
+      console.log('weird', { line, indent, prevIndent, YAMLing, YAMLblocking })
     }
   } else if (line.startsWith('TAP version ')) { // version
     const version = line.split(' ').pop();
@@ -113,31 +114,24 @@ function parseLine(line) {
     summary.plan.count = plan;
     events.emit('plan', { line, plan, bad: summary.plan.bad });
   } else if (line.startsWith('# ')) { // comment
-    if ((/^# (tests|pass|fail)/).test(line)) { // tape-specific: summary count
-      let [_, type, count] = line.match(/^# (tests|pass|fail)\s+(\d+)/) || [];
-      if (type && count) {
-        count = Number(count)
-        summary[type] = count;
-        events.emit('count', { line, type, count });
-      }
-    } else {
-      let comment = line.substring(2);
-      let todo = false;
-      let skip = false;
+    let comment = line.substring(2);
+    let todo = false;
+    let skip = false;
 
-      if (comment.startsWith('TODO ')) {
-        comment = comment.substring(5);
-        todo = true;
-      } else if (comment.startsWith('SKIP ')) {
-        comment = comment.substring(5);
-        skip = true;
-      }
-
-      events.emit('comment', { line, comment, todo, skip });
+    if (comment.startsWith('TODO ')) {
+      comment = comment.substring(5);
+      todo = true;
+    } else if (comment.startsWith('SKIP ')) {
+      comment = comment.substring(5);
+      skip = true;
     }
+
+    events.emit('comment', { line, comment, todo, skip });
   } else { // other
     events.emit('other', { line });
   }
+
+  prevIndent = indent;
 }
 
 function close() { // done + end

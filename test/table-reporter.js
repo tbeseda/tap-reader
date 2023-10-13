@@ -9,15 +9,16 @@ const chars = {
   'right': '', 'right-mid': '',
   'middle': ' ',
 }
-
 const table = new Table({
-  head: ['EVENT', 'ID', 'MARK', 'VALUE'],
+  head: ['EVENT', 'ID', 'DIRECTIVE', 'VALUE'],
   chars,
 });
 const write = process.stdout.write.bind(process.stdout)
 const reader = TapReader({ input: process.stdin });
 
 write('\n');
+
+setInterval(() => { write('•') }, 150);
 
 reader.on('version', ({ version }) => {
   table.push(['VERSION', null, null, version]);
@@ -40,11 +41,20 @@ reader.on('plan', ({ plan, bad }) => {
 })
 
 reader.on('count', ({ type, count }) => {
-  table.push(['COUNT', null, null, `${type}: ${count}`]);
 })
 
 reader.on('comment', ({ comment, todo, skip }) => {
-  table.push(['COMMENT', null, todo ? 'TODO' : skip ? 'SKIP' : null, comment]);
+  let evcent = 'COMMENT'
+  let c = comment
+  const directive = todo ? 'TODO' : skip ? 'SKIP' : null;
+  if ((/^(tests|pass|fail)/).test(comment)) { // tape-specific: summary count
+    const [_, type, count] = comment.match(/^(tests|pass|fail)\s+(\d+)/) || [];
+    if (type && count) {
+      evcent = 'COUNT'
+      c = `${type}: ${count}`;
+    }
+  }
+  table.push([evcent, null, directive, c]);
 })
 
 reader.on('other', ({ line }) => {
@@ -62,6 +72,7 @@ reader.on('done', ({ summary, ok }) => {
 })
 
 reader.on('end', ({ ok }) => {
+  write('\n');
   write(table.toString());
   write('\n');
   process.exit(ok ? 0 : 1);
