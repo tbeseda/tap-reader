@@ -1,17 +1,21 @@
 {
   "name": "tap-reader",
   "version": "0.0.1",
-  "description": "",
+  "description": "A smol, streaming TAP parser.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tbeseda/tap-reader.git"
+  },
   "main": "src/index.js",
   "type": "module",
   "bin": {
     "tap-reader": "src/index.js"
   },
   "files": [
-    "src"
+    "src/"
   ],
   "scripts": {
-    "start": "tape test/make-tap.js | node test/table-reporter.js",
+    "start": "tape test/tap/make-tap.js | node examples/table-reporter.js",
     "test": "tape test/**/*-test.js"
   },
   "author": "tbeseda",
@@ -26,5 +30,11 @@
     "packages": {
       "yaml.js": "https://esm.sh/v133/yaml@2.3.2/es2021/yaml.bundle.mjs"
     }
-  }
+  },
+  "keywords": [
+    "tap",
+    "parser",
+    "testing",
+    "tape"
+  ]
 }
