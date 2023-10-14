@@ -7,7 +7,7 @@
 </p>
 
 > [!WARNING]  
-> `tap-reader` is pre-release. It's not ready for production use.
+> `tap-reader` is not ready for production use. v0.1.0 will be a stable release.
 
 Sample reporter that leverages `tap-reader`:
 
@@ -65,7 +65,7 @@ reader.on('end', ({ ok }) => {
 })
 ```
 
-Also see `test/table-reporter.js` for another example.
+Also see `examples/table-reporter.js` for another example.
 
 ## TODO:
 
