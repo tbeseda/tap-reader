@@ -93,11 +93,14 @@ function parseLine(line) {
     YAMLblock = [];
     failures[`id:${recentId}`].lines.push(line);
   } else if (line.startsWith('1..')) { // "1..N" plan
-    // TODO: handle "1..n # Reason"
-    const plan = line.split('..').map(Number);
-    // TODO: handle plan[1] === '0' -- equivalent to SKIP
+    const [_, start, end, comment] = line.match(/^(\d+)\.\.(\d+)(?:\s*#\s*(.*))?$/) || [];
+    const plan = [start, end].map(Number);
+    const todo = end && end < start;
+
     summary.plan.count = plan;
-    events.emit('plan', { line, plan, bad: summary.plan.bad });
+    summary.plan.comment = comment;
+    summary.plan.todo = todo;
+    events.emit('plan', { line, plan, comment, todo, bad: summary.plan.bad });
   } else if (line.startsWith('# ')) { // "# " comment
     let comment = line.substring(2);
     let todo = false;
