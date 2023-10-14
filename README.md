@@ -12,6 +12,7 @@
 Sample reporter that leverages `tap-reader`:
 
 ```js
+#!/usr/bin/env node
 import { stdin } from 'node:process';
 import TapReader from 'tap-reader'
 

@@ -5,11 +5,11 @@ import TapReader from '../src/index.js';
 
 const here = new URL('.', import.meta.url).pathname;
 
-test('TapReader: events', t => {
+test('TapReader: events shapes', t => {
   const input = createReadStream(join(here, 'tap', 'simple.tap'), 'utf8');
   const reader = TapReader({ input });
 
-  t.plan(28);
+  t.plan(33);
 
   reader.on('version', ({ version }) => {
     t.equal(version, '14', 'version.version');
@@ -20,11 +20,12 @@ test('TapReader: events', t => {
     t.equal(bad, false, 'plan.bad');
   });
 
-  reader.on('pass', ({ id, desc, skip, todo }) => {
+  reader.on('pass', ({ id, desc, skip, todo, reason }) => {
     t.equal(id, '1', 'pass.id');
     t.equal(desc, 'Input file opened', 'pass.desc');
     t.equal(skip, undefined, 'pass.skip');
-    t.equal(todo, undefined, 'pass.todo');
+    t.equal(todo, true, 'pass.todo');
+    t.equal(reason, 'Not written yet', 'pass.reason');
   });
 
   reader.on('other', ({ line }) => {
@@ -33,16 +34,18 @@ test('TapReader: events', t => {
 
   reader.on('comment', ({ comment, todo, skip }) => {
     t.equal(comment, "Here's a comment", 'comment.comment');
-    t.equal(todo, undefined, 'comment.todo');
+    t.equal(todo, true, 'comment.todo');
     t.equal(skip, undefined, 'comment.skip');
   });
 
-  reader.on('fail', ({ id, desc, skip, todo, diag }) => {
+  reader.on('fail', ({ id, desc, skip, todo, reason, diag }) => {
     const expected = { message: 'First line invalid', severity: 'fail', data: { got: 'Flirble', expect: 'Fnible' } }
+
     t.equal(id, '2', 'fail.id');
     t.equal(desc, 'First line of the input valid', 'fail.desc');
-    t.equal(skip, undefined, 'fail.skip');
+    t.equal(skip, true, 'fail.skip');
     t.equal(todo, undefined, 'fail.todo');
+    t.equal(reason, 'Not implemented', 'fail.reason');
     t.deepEqual(diag, expected, 'fail.diag');
   });
 
@@ -50,25 +53,52 @@ test('TapReader: events', t => {
     t.ok(Array.isArray(lines), 'done.lines: Array')
     t.equal(lines.length, 13, 'done.lines.length');
 
-    // t.equal(summary.tests, 2, 'done.summary: tests');
-    // t.equal(summary.pass, 1, 'done.summary: pass');
-    // t.equal(summary.fail, 1, 'done.summary: fail');
-    t.equal(summary.skip, 0, 'done.summary: skip');
-    t.equal(summary.todo, 0, 'done.summary: todo');
+    t.equal(summary.tests, 2, 'done.summary: tests');
+    t.equal(summary.pass, 1, 'done.summary: pass');
+    t.equal(summary.fail, 1, 'done.summary: fail');
+    t.equal(summary.skip, 1, 'done.summary: skip');
+    t.equal(summary.todo, 1, 'done.summary: todo');
 
     t.equal(typeof passing, 'object', 'done.passing: Object');
     t.equal(Object.keys(passing).length, 1, 'done.passing.length');
-    t.ok(passing['id:1'], 'done.passing["id:1"]');
+    t.deepEqual(passing['id:1'], {
+      line: 'ok 1 - Input file opened # TODO Not written yet',
+      id: '1',
+      desc: 'Input file opened',
+      reason: 'Not written yet',
+      todo: true
+    }, 'done.passing["id:1"]');
 
     t.equal(typeof failures, 'object', 'done.failures: Object');
     t.equal(Object.keys(failures).length, 1, 'done.failures.length');
-    t.ok(failures['id:2'], 'done.failures["id:1"]');
+    t.deepEqual(failures['id:2'], {
+      line: 'not ok 2 - First line of the input valid # SKIP Not implemented',
+      id: '2',
+      desc: 'First line of the input valid',
+      reason: 'Not implemented',
+      diag: {
+        message: 'First line invalid',
+        severity: 'fail',
+        data: { got: 'Flirble', expect: 'Fnible' }
+      },
+      lines: [
+        'not ok 2 - First line of the input valid # SKIP Not implemented',
+        '  ---',
+        "  message: 'First line invalid'",
+        '  severity: fail',
+        '  data:',
+        "    got: 'Flirble'",
+        "    expect: 'Fnible'",
+        '  ...'
+      ],
+      skip: true
+    }, 'done.failures["id:1"]');
 
     t.equal(ok, false, 'done: ok');
   });
 
   reader.on('end', ({ ok }) => {
-    t.equal(ok, false, 'end event');
+    t.equal(ok, false, 'end: ok');
   });
 
   reader.on('error', err => {

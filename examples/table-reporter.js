@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import Table from 'cli-table3'
 import TapReader from '../src/index.js'
 
@@ -25,21 +26,24 @@ reader.on('version', ({ version }) => {
   table.push(['VERSION', null, null, version]);
 });
 
-reader.on('pass', ({ id, desc, skip, todo }) => {
+reader.on('pass', ({ id, desc, skip, todo, reason }) => {
   write('•');
 
-  table.push(['PASS', id, todo ? 'TODO' : skip ? 'SKIP' : null, desc]);
+  let directive = todo ? 'TODO' : skip ? 'SKIP' : '';
+  directive += reason ? ` (${reason})` : '';
+
+  table.push(['PASS', id, directive, desc]);
 });
 
-reader.on('fail', ({ id, desc, skip, todo, diag }) => {
+reader.on('fail', ({ id, desc, skip, todo, reason, diag }) => {
   write('•');
 
-  const { operator, expected, actual, stack } = diag;
-  table.push(['FAIL', id, todo ? 'TODO' : skip ? 'SKIP' : null, desc]);
-  table.push([null, null, null, `operator: ${operator}`]);
-  table.push([null, null, null, `expected: ${expected}`]);
-  table.push([null, null, null, `actual: ${actual}`]);
-  table.push([null, null, null, `stack: \n${stack}`]);
+  let directive = todo ? 'TODO' : skip ? 'SKIP' : '';
+  directive += reason ? ` (${reason})` : '';
+
+  table.push(['FAIL', id, directive, desc]);
+  for (const key in diag)
+    table.push([null, null, null, `${key}: ${diag[key]}`]);
 });
 
 reader.on('plan', ({ plan, bad }) => {
@@ -54,6 +58,7 @@ reader.on('comment', ({ comment, todo, skip }) => {
   let event = 'COMMENT'
   let c = comment
   const directive = todo ? 'TODO' : skip ? 'SKIP' : null;
+
   if ((/^(tests|pass|fail)/).test(comment)) { // tape-specific: summary count
     const [_, type, count] = comment.match(/^(tests|pass|fail)\s+(\d+)/) || [];
     if (type && count) {
@@ -61,6 +66,7 @@ reader.on('comment', ({ comment, todo, skip }) => {
       c = `${type}: ${count}`;
     }
   }
+
   table.push([event, null, directive, c]);
 })
 

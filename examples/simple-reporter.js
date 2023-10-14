@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { stdin } from 'node:process';
 import TapReader from '../src/index.js'
 

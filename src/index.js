@@ -30,10 +30,7 @@ let YAMLing = false;
 function parseLine(line) {
   lines.push(line);
 
-  if (
-    recentLine.startsWith('not ok')
-    && !/^\s{2}-{3}$/.test(line)
-    && !YAMLing
+  if (recentLine.startsWith('not ok') && !/^\s{2}-{3}$/.test(line)
   ) {
     // recent failure doesn't have diag, emit recent failure
     const failure = failures[`id:${recentId}`];
@@ -62,8 +59,8 @@ function parseLine(line) {
     const version = line.split(' ').pop();
     events.emit('version', { line, version });
   } else if (line.startsWith('ok')) { // "ok"
-    let [_, id, desc, directive] = line.match(/^ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(TODO|SKIP))?$/) || [];
-    const pass = { line, id, desc }
+    let [_, id, desc, directive, reason] = line.match(/^ok (\d+)(?: - |\s+)(.*?)(?: # )?(TODO|SKIP)\s?(?: (.*))?$/) || [];
+    const pass = { line, id, desc, reason }
 
     if (directive) {
       directive = directive.trim().toLowerCase();
@@ -72,11 +69,13 @@ function parseLine(line) {
     }
 
     passing[`id:${id}`] = pass;
+    summary.tests += 1;
+    summary.pass += 1;
     events.emit('pass', pass);
   } else if (line.startsWith('not ok')) { // "not ok"
     ok = false;
-    let [_, id, desc, directive] = line.match(/^not ok\s+(\d+)\s(?:\s*-\s*)?(.*?)(?:\s#\s(TODO|SKIP))?$/) || [];
-    const failure = { id, desc, line, diag: {}, lines: [line] }
+    let [_, id, desc, directive, reason] = line.match(/^not ok (\d+)(?: - |\s+)(.*?)(?: # )?(TODO|SKIP)\s?(?: (.*))?$/) || [];
+    const failure = { line, id, desc, reason, diag: {}, lines: [line] }
 
     if (directive) {
       directive = directive.trim().toLowerCase();
@@ -88,6 +87,8 @@ function parseLine(line) {
 
     recentId = id;
     if (desc === 'plan != count') summary.plan.bad = true;
+    summary.tests += 1;
+    summary.fail += 1;
   } else if (/^\s{2}-{3}$/.test(line)) { // "  ---" YAML block open
     YAMLing = true;
     YAMLblock = [];
