@@ -103,8 +103,8 @@ function parseLine(line) {
     events.emit('plan', { line, plan, comment, todo, bad: summary.plan.bad });
   } else if (line.startsWith('# ')) { // "# " comment
     let comment = line.substring(2);
-    let todo = false;
-    let skip = false;
+    let todo;
+    let skip;
 
     if (comment.startsWith('TODO ')) {
       comment = comment.substring(5);
@@ -132,11 +132,33 @@ function close() { // done + end
   events.emit('end', { ok });
 }
 
-function TapReader({ input, bail = false }) {
+/**
+ * @extends EventEmitter
+ * @fires TapReaderEvents#version
+ * @fires TapReaderEvents#pass
+ * @fires TapReaderEvents#fail
+ * @fires TapReaderEvents#plan
+ * @fires TapReaderEvents#comment
+ * @fires TapReaderEvents#other
+ * @fires TapReaderEvents#done
+ * @fires TapReaderEvents#end
+ */
+class TapReaderEvents extends EventEmitter { }
+
+/**
+ * @param {object} options TapReader options
+ * @param {(NodeJS.ReadStream & { fd?: 0; }) | import('fs').ReadStream} options.input input ReadStream
+ * @param {boolean} [options.bail] bail on first failure
+ * @returns {TapReaderEvents} TapReader events
+ */
+function TapReader(options) {
+  const { input, bail = false } = options;
   if (!input) throw new Error('input stream required');
+  if (!(typeof input === 'object' && typeof input.on === 'function')) throw new Error('input should be a stream');
+  if (typeof bail !== 'boolean') throw new Error('bail should be a boolean');
 
   BAIL = bail;
-  events = new EventEmitter();
+  events = new TapReaderEvents();
   readline = createInterface({ input });
 
   readline.on('line', parseLine);

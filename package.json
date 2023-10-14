@@ -28,7 +28,7 @@
   "vendurl": {
     "destination": "src/vendor",
     "packages": {
-      "yaml.js": "https://esm.sh/v133/yaml@2.3.2/es2021/yaml.bundle.mjs"
+      "yaml.js": "yaml@2.3.2?target=es2021"
     }
   },
   "keywords": [

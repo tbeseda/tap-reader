@@ -1,6 +1,8 @@
 TAP version 14
-1..4
+1..2
 ok 1 - Input file opened
+This is a log statement
+# Here's a comment
 not ok 2 - First line of the input valid
   ---
   message: 'First line invalid'
@@ -8,10 +10,4 @@ not ok 2 - First line of the input valid
   data:
     got: 'Flirble'
     expect: 'Fnible'
-  ...
-ok 3 - Read the rest of the file
-not ok 4 - Summarized correctly # TODO Not written yet
-  ---
-  message: "Can't make summary yet"
-  severity: todo
   ...
