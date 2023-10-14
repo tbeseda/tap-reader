@@ -53,11 +53,12 @@ test('TapReader: events shapes', t => {
     t.ok(Array.isArray(lines), 'done.lines: Array')
     t.equal(lines.length, 13, 'done.lines.length');
 
-    t.equal(summary.tests, 2, 'done.summary: tests');
-    t.equal(summary.pass, 1, 'done.summary: pass');
-    t.equal(summary.fail, 1, 'done.summary: fail');
-    t.equal(summary.skip, 1, 'done.summary: skip');
-    t.equal(summary.todo, 1, 'done.summary: todo');
+    const { plan, tests, pass, fail, skip, todo } = summary;
+    t.equal(tests, 2, 'done.summary: tests');
+    t.equal(pass, 1, 'done.summary: pass');
+    t.equal(fail, 1, 'done.summary: fail');
+    t.equal(skip, 1, 'done.summary: skip');
+    t.equal(todo, 1, 'done.summary: todo');
 
     t.equal(typeof passing, 'object', 'done.passing: Object');
     t.equal(Object.keys(passing).length, 1, 'done.passing.length');

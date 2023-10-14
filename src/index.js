@@ -54,9 +54,9 @@ function TapReader(options) {
 
   function parseLine(line) {
     lines.push(line);
+    events.emit('line', { line });
 
-    if (recentLine.startsWith('not ok') && !/^\s{2}-{3}$/.test(line)
-    ) {
+    if (recentLine.startsWith('not ok') && !/^\s{2}-{3}$/.test(line)) {
       // recent failure doesn't have diag, emit recent failure
       const failure = failures[`id:${recentId}`];
       events.emit('fail', failure);
@@ -84,7 +84,7 @@ function TapReader(options) {
       const version = line.split(' ').pop();
       events.emit('version', { line, version });
     } else if (line.startsWith('ok')) { // "ok"
-      let [_, id, desc, directive, reason] = line.match(/^ok (\d+)(?: - |\s+)(.*?)(?: # )?(TODO|SKIP)\s?(?: (.*))?$/) || [];
+      let [_, id, desc, directive, reason] = line.match(/^ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || [];
       const pass = { line, id, desc, reason }
 
       if (directive) {
@@ -99,7 +99,7 @@ function TapReader(options) {
       events.emit('pass', pass);
     } else if (line.startsWith('not ok')) { // "not ok"
       ok = false;
-      let [_, id, desc, directive, reason] = line.match(/^not ok (\d+)(?: - |\s+)(.*?)(?: # )?(TODO|SKIP)\s?(?: (.*))?$/) || [];
+      let [_, id, desc, directive, reason] = line.match(/^not ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || [];
       const failure = { line, id, desc, reason, diag: {}, lines: [line] }
 
       if (directive) {
