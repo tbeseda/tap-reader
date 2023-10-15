@@ -34,8 +34,8 @@ reader.on('fail', ({ id, desc, skip, todo, diag }) => {
     write(`  ${key}: ${diag[key]}`);
 });
 
-reader.on('plan', ({ plan, bad }) => {
-  write(`plan: ${plan[0]} → ${plan[1]} ${bad ? '(BAD)' : ''}`);
+reader.on('plan', ({ plan, comment, todo }) => {
+  write(`plan: ${plan[0]} → ${plan[1]} ${comment || ''} ${todo ? 'TODO' :''}`);
 })
 
 reader.on('comment', ({ comment, todo, skip }) => {

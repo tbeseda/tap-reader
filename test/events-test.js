@@ -9,15 +9,16 @@ test('TapReader: events shapes', t => {
   const input = createReadStream(join(here, 'tap', 'simple.tap'), 'utf8');
   const reader = TapReader({ input });
 
-  t.plan(34);
+  t.plan(35);
 
   reader.on('version', ({ version }) => {
     t.equal(version, '14', 'version.version');
   });
 
-  reader.on('plan', ({ plan, bad }) => {
-    t.deepEqual(plan, [1, 2], 'plan.plan');
-    t.equal(bad, false, 'plan.bad');
+  reader.on('plan', ({ start, end, comment, todo }) => {
+    t.deepEqual([start, end], [1, 2], 'plan.start, plan.end');
+    t.equal(comment, 'The plan!', 'plan.comment');
+    t.notOk(todo, 'plan.todo');
   });
 
   reader.on('pass', ({ id, desc, skip, todo }) => {

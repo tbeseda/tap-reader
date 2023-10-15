@@ -37,13 +37,13 @@ function TapReader(options) {
   const lines = []; // all lines
   const tests = {}; // tests by id like "id:1"
   const summary = {
-    plan: { bad: false },
     total: 0,
     pass: 0,
     fail: 0,
     skip: 0,
     todo: 0,
   };
+  let plan;
 
   let prevId;
   let prevLine = '';
@@ -109,8 +109,6 @@ function TapReader(options) {
         if (directive === 'todo') test.ok = true;
       }
 
-      if (desc === 'plan != count') summary.plan.bad = true;
-
       const testId = `id:${id}`;
       tests[testId] = test;
       prevId = testId;
@@ -119,14 +117,13 @@ function TapReader(options) {
       YAMLblock = [];
       prevTest.lines.push(line);
     } else if (line.startsWith('1..')) { // "1..N" plan
-      const [_, start, end, comment] = line.match(/^(\d+)\.\.(\d+)(?:\s*#\s*(.*))?$/) || [];
-      const plan = [start, end].map(Number);
-      const todo = end && end < start;
+      let [_, start, end, comment] = line.match(/^(\d+)\.\.(\d+)(?:\s*#\s*(.*))?$/) || [];
+      [start, end] = [start, end].map(Number);
+      const todo = start && end && end < start;
 
-      summary.plan.count = plan;
-      summary.plan.comment = comment;
-      summary.plan.todo = todo;
-      events.emit('plan', { line, plan, comment, todo, bad: summary.plan.bad });
+      plan = { line, start, end, comment, todo }
+
+      events.emit('plan', plan);
     } else if (line.startsWith('# ')) { // "# " comment
       let comment = line.substring(2);
       let todo;
@@ -175,7 +172,7 @@ function TapReader(options) {
       }
     }
 
-    events.emit('done', { lines, summary, tests, passing, failures, ok });
+    events.emit('done', { lines, summary, plan, tests, passing, failures, ok });
     events.emit('end', { ok });
   }
 

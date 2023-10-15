@@ -1,5 +1,5 @@
 TAP version 14
-1..2
+1..2 # The plan!
 ok 1 - Input file opened # TODO Not written yet
 This is a log statement
 # TODO Here's a comment

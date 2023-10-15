@@ -46,10 +46,10 @@ reader.on('fail', ({ id, desc, skip, todo, reason, diag }) => {
     table.push([null, null, null, `${key}: ${diag[key]}`]);
 });
 
-reader.on('plan', ({ plan, bad }) => {
+reader.on('plan', ({ start, end, comment, todo }) => {
   write('•');
 
-  table.push(['PLAN', null, null, `plan: ${plan[0]} → ${plan[1]} ${bad ? '(BAD)' : ''}`]);
+  table.push(['PLAN', null, null, `plan: ${start} → ${end} ${comment || ''} ${todo ? 'TODO' : ''}`]);
 })
 
 reader.on('comment', ({ comment, todo, skip }) => {
