@@ -34,45 +34,47 @@ function TapReader(options) {
   const events = new TapReaderEvents();
   const readline = createInterface({ input });
   const BAIL = bailOption;
-  const lines = [];
-  const passing = {};
-  const failures = {};
+  const lines = []; // all lines
+  const tests = {}; // tests by id like "id:1"
   const summary = {
     plan: { bad: false },
-    tests: 0,
+    total: 0,
     pass: 0,
     fail: 0,
-    todo: 0,
     skip: 0,
-  }
+    todo: 0,
+  };
 
-  let ok = false;
-  let recentId;
-  let recentLine = '';
+  let prevId;
+  let prevLine = '';
   let YAMLblock
   let YAMLing = false;
 
   function parseLine(line) {
     lines.push(line);
     events.emit('line', { line });
+    const prevTest = tests[prevId];
 
-    if (recentLine.startsWith('not ok') && !/^\s{2}-{3}$/.test(line)) {
-      // recent failure doesn't have diag, emit recent failure
-      const failure = failures[`id:${recentId}`];
-      events.emit('fail', failure);
-      if (BAIL) bail({ reason: 'Pessimistic failure' });
+    if (prevLine.startsWith('not ok') && !/^\s{2}-{3}$/.test(line)) {
+      // recent failure doesn't have diag, emit it
+      if (prevTest.ok) {
+
+        events.emit('pass', prevTest);
+      } else {
+        events.emit('fail', prevTest);
+        if (BAIL) bail({ reason: 'Pessimistic failure' });
+      }
     }
 
     if (YAMLing) {
-      const failure = failures[`id:${recentId}`];
-      failure.lines.push(line);
+      prevTest.lines.push(line);
 
       if (/^\s{2}\.{3}$/.test(line)) { // "  ..." YAML block close
         YAMLing = false;
 
-        failure.diag = parse(YAMLblock.join('\n'));;
+        prevTest.diag = parse(YAMLblock.join('\n'));;
 
-        events.emit('fail', failure);
+        events.emit('fail', prevTest);
         if (BAIL) bail();
       }
       else {
@@ -85,39 +87,37 @@ function TapReader(options) {
       events.emit('version', { line, version });
     } else if (line.startsWith('ok')) { // "ok"
       let [_, id, desc, directive, reason] = line.match(/^ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || [];
-      const pass = { line, id, desc, reason }
+      const test = { ok: true, line, id, desc }
 
       if (directive) {
         directive = directive.trim().toLowerCase();
-        pass[directive] = true;
-        summary[directive] = (summary[directive] || 0) + 1;
+        test[directive] = reason || true;
       }
 
-      passing[`id:${id}`] = pass;
-      summary.tests += 1;
-      summary.pass += 1;
-      events.emit('pass', pass);
+      const testId = `id:${id}`;
+      tests[testId] = test;
+      prevId = testId;
+      events.emit('pass', test);
     } else if (line.startsWith('not ok')) { // "not ok"
-      ok = false;
       let [_, id, desc, directive, reason] = line.match(/^not ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || [];
-      const failure = { line, id, desc, reason, diag: {}, lines: [line] }
+      const test = { ok: false, line, id, desc, diag: {}, lines: [line] }
 
       if (directive) {
         directive = directive.trim().toLowerCase();
-        failure[directive] = true;
-        summary[directive] = (summary[directive] || 0) + 1;
+        test[directive] = reason || true;
+        // "Harnesses must not treat failing TODO test points as a test failure."
+        if (directive === 'todo') test.ok = true;
       }
 
-      failures[`id:${id}`] = failure;
-
-      recentId = id;
       if (desc === 'plan != count') summary.plan.bad = true;
-      summary.tests += 1;
-      summary.fail += 1;
+
+      const testId = `id:${id}`;
+      tests[testId] = test;
+      prevId = testId;
     } else if (/^\s{2}-{3}$/.test(line)) { // "  ---" YAML block open
       YAMLing = true;
       YAMLblock = [];
-      failures[`id:${recentId}`].lines.push(line);
+      prevTest.lines.push(line);
     } else if (line.startsWith('1..')) { // "1..N" plan
       const [_, start, end, comment] = line.match(/^(\d+)\.\.(\d+)(?:\s*#\s*(.*))?$/) || [];
       const plan = [start, end].map(Number);
@@ -145,7 +145,7 @@ function TapReader(options) {
       events.emit('other', { line });
     }
 
-    recentLine = line;
+    prevLine = line;
   }
 
   function bail(payload) { // bail
@@ -154,7 +154,28 @@ function TapReader(options) {
   }
 
   function close() { // done + end
-    events.emit('done', { lines, summary, passing, failures, ok });
+    let ok = false;
+    const passing = {};
+    const failures = {};
+    summary.total = Object.keys(tests).length;
+
+    for (const id in tests) {
+      const test = tests[id];
+
+      if (test.skip) summary.skip += 1;
+      if (test.todo) summary.todo += 1;
+
+      if (test.ok) {
+        passing[id] = test;
+        summary.pass += 1;
+      } else {
+        ok = false;
+        failures[id] = test;
+        summary.fail += 1;
+      }
+    }
+
+    events.emit('done', { lines, summary, tests, passing, failures, ok });
     events.emit('end', { ok });
   }
 

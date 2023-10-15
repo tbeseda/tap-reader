@@ -53,21 +53,13 @@ reader.on('plan', ({ plan, bad }) => {
 })
 
 reader.on('comment', ({ comment, todo, skip }) => {
+  if ((/^(tests|pass|fail)/).test(comment)) return // tape-specific: summary count
+
   write('•');
 
-  let event = 'COMMENT'
-  let c = comment
   const directive = todo ? 'TODO' : skip ? 'SKIP' : null;
 
-  if ((/^(tests|pass|fail)/).test(comment)) { // tape-specific: summary count
-    const [_, type, count] = comment.match(/^(tests|pass|fail)\s+(\d+)/) || [];
-    if (type && count) {
-      event = 'COUNT'
-      c = `${type}: ${count}`;
-    }
-  }
-
-  table.push([event, null, directive, c]);
+  table.push(['COMMENT', null, directive, comment]);
 })
 
 reader.on('other', ({ line }) => {
@@ -77,14 +69,27 @@ reader.on('other', ({ line }) => {
     table.push(['OTHER', null, null, line]);
 })
 
-reader.on('done', ({ summary, ok }) => {
+reader.on('done', ({ summary, failures, ok }) => {
   write('•');
 
-  const { skip, todo } = summary;
+  table.push(['DONE', null, null, null]);
+
+  for (const key in failures) {
+    const { id, ok: failOk, desc } = failures[key];
+    if (failOk) continue;
+    table.push([null, id, null, desc]);
+  }
+
+  table.push([null, null, null, null]);
+
+  const { total, pass, fail, skip, todo } = summary;
   table.push(
-    ['DONE', null, null, `skip: ${skip}`],
+    [null, null, null, `total: ${total}`],
+    [null, null, null, `pass: ${pass}`],
+    [null, null, null, `fail: ${fail}`],
+    [null, null, null, `skip: ${skip}`],
     [null, null, null, `todo: ${todo}`],
-    ['OK', null, null, `${ok}`],
+    [null, null, null, `OK: ${ok}`],
   );
 })
 

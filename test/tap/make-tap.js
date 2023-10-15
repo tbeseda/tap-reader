@@ -3,7 +3,7 @@ import test from 'tape'
 test('Sample passing tests', (t) => {
   t.plan(3)
 
-  t.deepEqual([3, 4, 5], [3, 4, 2 + 3], ' - A deeply equal array')
+  t.deepEqual([3, 4, 5], [3, 4, 2 + 3], '- A deeply equal array')
   t.skip('A skipped test')
   t.deepEqual({ a: 7, b: [8, 9] }, { a: 3 + 4, b: [8, 9] }, 'A deeply equal object')
 
