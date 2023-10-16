@@ -121,9 +121,12 @@ function TapReader(options) {
       [start, end] = [start, end].map(Number);
       const todo = start && end && end < start;
 
-      plan = { line, start, end, comment, todo }
+      const newPlan = { line, start, end, comment, todo };
 
-      events.emit('plan', plan);
+      if (plan) plan = [plan, newPlan]
+      else plan = newPlan
+
+      events.emit('plan', newPlan);
     } else if (line.startsWith('# ')) { // "# " comment
       let comment = line.substring(2);
       let todo;
