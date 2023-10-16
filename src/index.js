@@ -151,7 +151,7 @@ function TapReader(options) {
   }
 
   function close() { // done + end
-    let ok = false;
+    let ok = true;
     const passing = {};
     const failures = {};
     summary.total = Object.keys(tests).length;
