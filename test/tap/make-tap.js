@@ -17,7 +17,7 @@ test(
     t.pass('A passing todo')
     t.fail('A failing todo')
     t.end()
-  },
+  }
 )
 
 test('A slow test', async (t) => {

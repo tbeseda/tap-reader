@@ -15,13 +15,15 @@
     "src/"
   ],
   "scripts": {
+    "lint": "standard --fix",
     "start": "tape test/tap/make-tap.js | node examples/table-reporter.js",
-    "test": "tape test/**/*-test.js"
+    "test": "standard && tape test/**/*-test.js"
   },
   "author": "tbeseda",
   "license": "Apache-2.0",
   "devDependencies": {
     "cli-table3": "^0.6.3",
+    "standard": "^17.1.0",
     "tape": "^5.7.1",
     "vendurl": "^0.1.1"
   },
@@ -30,6 +32,11 @@
     "packages": {
       "yaml.js": "yaml@2.3.2?target=es2021"
     }
+  },
+  "standard": {
+    "ignore": [
+      "src/vendor"
+    ]
   },
   "keywords": [
     "tap",
