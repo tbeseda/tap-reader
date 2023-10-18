@@ -9,19 +9,22 @@ test('TapReader: events shapes', t => {
   const input = createReadStream(join(here, 'tap', 'simple.tap'), 'utf8')
   const reader = TapReader({ input })
 
-  t.plan(35)
+  t.plan(40)
 
-  reader.on('version', ({ version }) => {
+  reader.on('version', ({ line, version }) => {
+    t.ok(line, 'parsed line')
     t.equal(version, '14', 'version.version')
   })
 
-  reader.on('plan', ({ start, end, comment, todo }) => {
+  reader.on('plan', ({ line, start, end, comment, todo }) => {
+    t.ok(line, 'parsed line')
     t.deepEqual([start, end], [1, 2], 'plan.start, plan.end')
     t.equal(comment, 'The plan!', 'plan.comment')
     t.notOk(todo, 'plan.todo')
   })
 
-  reader.on('pass', ({ id, desc, skip, todo }) => {
+  reader.on('pass', ({ line, id, desc, skip, todo }) => {
+    t.ok(line, 'parsed line')
     t.equal(id, '1', 'pass.id')
     t.equal(desc, 'Input file opened', 'pass.desc')
     t.equal(skip, undefined, 'pass.skip')
@@ -32,13 +35,15 @@ test('TapReader: events shapes', t => {
     t.equal(line, 'This is a log statement', 'other.line')
   })
 
-  reader.on('comment', ({ comment, todo, skip }) => {
+  reader.on('comment', ({ line, comment, todo, skip }) => {
+    t.ok(line, 'parsed line')
     t.equal(comment, "Here's a comment", 'comment.comment')
     t.equal(todo, true, 'comment.todo')
     t.equal(skip, undefined, 'comment.skip')
   })
 
-  reader.on('fail', ({ id, desc, skip, todo, diag }) => {
+  reader.on('fail', ({ line, id, desc, skip, todo, diag }) => {
+    t.ok(line, 'parsed line')
     const expected = { message: 'First line invalid', severity: 'fail', data: { got: 'Flirble', expect: 'Fnible' } }
 
     t.equal(id, '2', 'fail.id')
