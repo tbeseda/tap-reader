@@ -121,7 +121,7 @@ function TapReader (options) {
     } else if (line.startsWith('1..')) { // "1..N" plan
       let [, start, end, comment] = line.match(/^(\d+)\.\.(\d+)(?:\s*#\s*(.*))?$/) || [];
       [start, end] = [start, end].map(Number)
-      const todo = start && end && end < start
+      const todo = end === 0
 
       const newPlan = { line, start, end, comment, todo }
 
