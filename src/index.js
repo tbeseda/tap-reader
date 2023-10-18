@@ -21,7 +21,7 @@ class TapReaderEvents extends EventEmitter { }
 
 /**
  * @param {object} options TapReader options
- * @param {(NodeJS.ReadStream & { fd?: 0; }) | import('fs').ReadStream} options.input input ReadStream
+ * @param {(NodeJS.ReadStream & { fd?: 0; }) | NodeJS.ReadableStream | import('fs').ReadStream} options.input input ReadStream
  * @param {boolean} [options.bail] bail on first failure
  * @returns {TapReaderEvents} TapReader events
  */
@@ -43,6 +43,7 @@ function TapReader (options) {
     skip: 0,
     todo: 0
   }
+  let bailed = false
   let plan
 
   let prevId
@@ -61,7 +62,10 @@ function TapReader (options) {
         events.emit('pass', prevTest)
       } else {
         events.emit('fail', prevTest)
-        if (BAIL) bail({ reason: 'Pessimistic failure' })
+        if (BAIL) {
+          bail({ reason: 'pessimistic' })
+          return // quit parsing
+        }
       }
     }
 
@@ -148,11 +152,12 @@ function TapReader (options) {
 
   function bail (payload) { // bail
     events.emit('bail', payload)
+    bailed = true
     readline.close()
   }
 
   function close () { // done + end
-    let ok = true
+    let ok = !bailed
     const passing = {}
     const failures = {}
     summary.total = Object.keys(tests).length
