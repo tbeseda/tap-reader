@@ -4,7 +4,7 @@
 
 import { createInterface } from 'readline'
 import { EventEmitter } from 'events'
-import { parse } from './vendor/yaml.js'
+import { parse as parseYAML } from './vendor/yaml.js'
 
 /**
  * @extends EventEmitter
@@ -48,7 +48,7 @@ function TapReader (options) {
 
   let prevId
   let prevLine = ''
-  let YAMLblock
+  let YAMLlines
   let YAMLing = false
 
   function parseLine (line) {
@@ -56,8 +56,11 @@ function TapReader (options) {
     events.emit('line', { line })
     const prevTest = tests[prevId]
 
-    if (prevLine.startsWith('not ok') && !/^\s{2}-{3}$/.test(line)) {
-      // recent failure doesn't have diag, emit it
+    if (
+      (prevLine.startsWith('not ok') || prevLine.startsWith('ok')) &&
+      !/^\s{2}-{3}$/.test(line)
+    ) {
+      // recent test doesn't have diag, emit it!
       if (prevTest.ok) {
         events.emit('pass', prevTest)
       } else {
@@ -75,12 +78,14 @@ function TapReader (options) {
       if (/^\s{2}\.{3}$/.test(line)) { // "  ..." YAML block close
         YAMLing = false
 
-        prevTest.diag = parse(YAMLblock.join('\n'))
+        if (YAMLlines && YAMLlines.length > 0) {
+          prevTest.diag = parseYAML(YAMLlines.join('\n'))
+        }
 
-        events.emit('fail', prevTest)
+        events.emit(prevTest.ok ? 'pass' : 'fail', prevTest)
         if (BAIL) bail()
       } else {
-        YAMLblock.push(line)
+        YAMLlines.push(line)
       }
     } else if (line.indexOf('Bail out!') >= 0) { // "Bail out!"
       bail({ reason: '"Bail out!"' })
@@ -89,7 +94,7 @@ function TapReader (options) {
       events.emit('version', { line, version })
     } else if (line.startsWith('ok')) { // "ok"
       let [, id, desc, directive, reason] = line.match(/^ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || []
-      const test = { ok: true, line, id, desc }
+      const test = { ok: true, line, lines: [line], id, desc }
 
       if (directive) {
         directive = directive.trim().toLowerCase()
@@ -99,10 +104,9 @@ function TapReader (options) {
       const testId = `id:${id}`
       tests[testId] = test
       prevId = testId
-      events.emit('pass', test)
     } else if (line.startsWith('not ok')) { // "not ok"
       let [, id, desc, directive, reason] = line.match(/^not ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || []
-      const test = { ok: false, line, id, desc, diag: {}, lines: [line] }
+      const test = { ok: false, line, id, desc, lines: [line] }
 
       if (directive) {
         directive = directive.trim().toLowerCase()
@@ -116,8 +120,9 @@ function TapReader (options) {
       prevId = testId
     } else if (/^\s{2}-{3}$/.test(line)) { // "  ---" YAML block open
       YAMLing = true
-      YAMLblock = []
+      YAMLlines = []
       prevTest.lines.push(line)
+      prevTest.diag = {}
     } else if (line.startsWith('1..')) { // "1..N" plan
       let [, start, end, comment] = line.match(/^(\d+)\.\.(\d+)(?:\s*#\s*(.*))?$/) || [];
       [start, end] = [start, end].map(Number)

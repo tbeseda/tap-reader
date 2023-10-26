@@ -82,5 +82,5 @@ I'm not stoked on it so this may change in the future.
 **Why not use `tap-parser`?**  
 `tap-parser` is great but... see above.
 
-**What are these `eslint-plugin-*` dev deps?**
+**What are these `eslint-plugin-*` dev deps?**  
 I'm maintaining Node v14 compatibility until Lambda no longer supports it. These packages satisfy linting step in CI.

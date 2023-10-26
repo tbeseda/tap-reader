@@ -69,6 +69,7 @@ test('TapReader: events shapes', t => {
     t.deepEqual(tests['id:1'], {
       ok: true,
       line: 'ok 1 - Input file opened # TODO Not written yet',
+      lines: ['ok 1 - Input file opened # TODO Not written yet'],
       id: '1',
       desc: 'Input file opened',
       todo: 'Not written yet',
@@ -79,6 +80,7 @@ test('TapReader: events shapes', t => {
     t.deepEqual(passing['id:1'], {
       ok: true,
       line: 'ok 1 - Input file opened # TODO Not written yet',
+      lines: ['ok 1 - Input file opened # TODO Not written yet'],
       id: '1',
       desc: 'Input file opened',
       todo: 'Not written yet',
