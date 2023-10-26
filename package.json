@@ -42,6 +42,7 @@
       "src/vendor"
     ],
     "rules": {
+      "space-unary-ops": 0,
       "comma-dangle": [
         "error",
         "always-multiline"
