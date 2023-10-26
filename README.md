@@ -6,9 +6,6 @@
   Documentation soon...
 </p>
 
-> [!WARNING]  
-> `tap-reader` is not ready for production use. v0.1.0 will be a stable release.
-
 Sample reporter that leverages `tap-reader`:
 
 ```js
@@ -65,13 +62,11 @@ reader.on('end', ({ ok }) => {
 
 Also see `examples/table-reporter.js` for another example.
 
-## TODO:
+## Coming next:
 
 - [ ] More TAP features like subtests, +pragmas, etc.
-- [ ] Test with different TAP reporters
 - [ ] Documentation for config and events
 - [ ] Intellisense via `.d.ts`
-
 
 ## FAQ:
 
