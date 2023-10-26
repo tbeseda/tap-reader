@@ -15,16 +15,19 @@
     "src/"
   ],
   "scripts": {
-    "lint": "standard --fix",
+    "lint": "eslint --ext .mjs --ext .js src/ test/",
+    "lint.fix": "npm run lint -- --fix",
     "start": "tape test/tap/make-tap.js | node examples/table-reporter.js",
-    "test": "standard && tape test/**/*-test.js"
+    "tape": "tape test/**/*-test.js",
+    "test": "npm run lint && npm run tape"
   },
   "author": "tbeseda",
   "license": "Apache-2.0",
   "devDependencies": {
     "cli-table3": "^0.6.3",
-    "standard": "^17.1.0",
-    "tape": "^5.7.1",
+    "eslint": "^8.52.0",
+    "eslint-config-standard": "^17.1.0",
+    "tape": "^5.7.2",
     "vendurl": "^0.1.1"
   },
   "vendurl": {
@@ -33,10 +36,17 @@
       "yaml.js": "yaml@2.3.2?target=es2021"
     }
   },
-  "standard": {
-    "ignore": [
+  "eslintConfig": {
+    "extends": "standard",
+    "ignorePatterns": [
       "src/vendor"
-    ]
+    ],
+    "rules": {
+      "comma-dangle": [
+        "error",
+        "always-multiline"
+      ]
+    }
   },
   "keywords": [
     "tap",

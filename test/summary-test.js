@@ -23,7 +23,7 @@ test('TapReader: summary', t => {
     '    message: |-',
     '      this is a message',
     '  ...',
-    '1..5'
+    '1..5',
   ].join('\n'))
   input.push(null)
 
@@ -35,7 +35,7 @@ test('TapReader: summary', t => {
       pass: 3,
       fail: 2,
       skip: 1,
-      todo: 1
+      todo: 1,
     }, 'summary')
 
     t.deepEqual(plan, {
@@ -43,7 +43,7 @@ test('TapReader: summary', t => {
       start: 1,
       end: 5,
       comment: undefined,
-      todo: false
+      todo: false,
     }, 'plan')
 
     t.equal(Object.keys(tests).length, 5, 'tests')

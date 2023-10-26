@@ -41,7 +41,7 @@ function TapReader (options) {
     pass: 0,
     fail: 0,
     skip: 0,
-    todo: 0
+    todo: 0,
   }
   let bailed = false
   let plan

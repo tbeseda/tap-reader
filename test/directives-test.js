@@ -19,7 +19,7 @@ test('TapReader: directives: TODO', t => {
     'not ok 7 - description # TODO',
     'not ok 8 - description # TODO reason',
     '# TODO comment',
-    '1..0'
+    '1..0',
   ].join('\n'))
   input.push(null)
 
@@ -92,7 +92,7 @@ test('TapReader: directives: SKIP', t => {
     'not ok 6 description # SKIP',
     'not ok 7 - description # SKIP',
     'not ok 8 - description # SKIP reason',
-    '# SKIP comment'
+    '# SKIP comment',
   ].join('\n'))
   input.push(null)
 

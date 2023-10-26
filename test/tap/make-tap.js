@@ -17,7 +17,7 @@ test(
     t.pass('A passing todo')
     t.fail('A failing todo')
     t.end()
-  }
+  },
 )
 
 test('A slow test', async (t) => {
@@ -41,7 +41,7 @@ test(
     await new Promise((resolve) => setTimeout(resolve, 50))
     t.pass('A slow passing test')
     t.end()
-  }
+  },
 )
 
 test('Some failing tests', (t) => {
@@ -54,12 +54,12 @@ test('Some failing tests', (t) => {
     st.deepEqual(
       ['foo', 'bar', 'baz'],
       ['foo', 'bar', 'foobar baz'],
-      'Sub-test partial array failure'
+      'Sub-test partial array failure',
     )
     st.deepEqual(
       { a: 'foo', b: [42], c: 'baz' },
       { a: 'bar', b: [420] },
-      'A small object deepEqual failure'
+      'A small object deepEqual failure',
     )
     st.end()
   })
@@ -75,6 +75,6 @@ test('Some failing tests', (t) => {
     expected
 
     `,
-    'A long string equal failure'
+    'A long string equal failure',
   )
 })

@@ -71,7 +71,7 @@ test('TapReader: events shapes', t => {
       line: 'ok 1 - Input file opened # TODO Not written yet',
       id: '1',
       desc: 'Input file opened',
-      todo: 'Not written yet'
+      todo: 'Not written yet',
     }, 'done.tests["id:1"]')
 
     t.equal(typeof passing, 'object', 'done.passing: Object')
@@ -81,7 +81,7 @@ test('TapReader: events shapes', t => {
       line: 'ok 1 - Input file opened # TODO Not written yet',
       id: '1',
       desc: 'Input file opened',
-      todo: 'Not written yet'
+      todo: 'Not written yet',
     }, 'done.passing["id:1"]')
 
     t.equal(typeof failures, 'object', 'done.failures: Object')
@@ -94,7 +94,7 @@ test('TapReader: events shapes', t => {
       diag: {
         message: 'First line invalid',
         severity: 'fail',
-        data: { got: 'Flirble', expect: 'Fnible' }
+        data: { got: 'Flirble', expect: 'Fnible' },
       },
       lines: [
         'not ok 2 - First line of the input valid # SKIP Not implemented',
@@ -104,9 +104,9 @@ test('TapReader: events shapes', t => {
         '  data:',
         "    got: 'Flirble'",
         "    expect: 'Fnible'",
-        '  ...'
+        '  ...',
       ],
-      skip: 'Not implemented'
+      skip: 'Not implemented',
     }, 'done.failures["id:1"]')
 
     t.notOk(ok, 'done: ok')
