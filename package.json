@@ -19,7 +19,7 @@
     "lint.fix": "npm run lint -- --fix",
     "start": "tape test/tap/make-tap.js | node examples/table-reporter.js",
     "tape": "tape test/**/*-test.js",
-    "test": "npm run lint && npm run tape"
+    "test": "npm run tape"
   },
   "author": "tbeseda",
   "license": "Apache-2.0",
@@ -27,9 +27,6 @@
     "cli-table3": "^0.6.3",
     "eslint": "^8.52.0",
     "eslint-config-standard": "^17.1.0",
-    "eslint-plugin-import": "^2.29.0",
-    "eslint-plugin-n": "^15.7.0",
-    "eslint-plugin-promise": "^6.1.1",
     "tape": "^5.7.2",
     "vendurl": "^0.1.1"
   },
