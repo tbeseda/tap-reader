@@ -1,17 +1,17 @@
-import { createReadStream } from 'fs'
-import { EventEmitter } from 'events'
-import { join } from 'path'
+import { EventEmitter } from 'node:events'
+import { createReadStream } from 'node:fs'
+import { join } from 'node:path'
 import test from 'tape'
 import TapReader from '../src/index.js'
 
 const here = new URL('.', import.meta.url).pathname
 
-test('TapReader', t => {
+test('TapReader', (t) => {
   t.plan(1)
   t.ok(TapReader, 'TapReader is imported')
 })
 
-test('TapReader: instantiation', t => {
+test('TapReader: instantiation', (t) => {
   t.plan(7)
 
   const input = createReadStream(join(here, 'tap', 'simple.tap'), 'utf8')

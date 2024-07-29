@@ -1,8 +1,8 @@
-import { Readable } from 'stream'
+import { Readable } from 'node:stream'
 import test from 'tape'
 import TapReader from '../src/index.js'
 
-test('TapReader: bail: "Bail out!"', t => {
+test('TapReader: bail: "Bail out!"', (t) => {
   t.plan(4)
 
   const input = new Readable()
@@ -32,7 +32,7 @@ test('TapReader: bail: "Bail out!"', t => {
   })
 })
 
-test('TapReader: bail: "pessimistic"', t => {
+test('TapReader: bail: "pessimistic"', (t) => {
   t.plan(4)
 
   const input = new Readable()

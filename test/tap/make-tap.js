@@ -10,15 +10,11 @@ test('Sample passing tests', (t) => {
   console.log('Arbitrary log')
 })
 
-test(
-  'A test set marked as "todo"',
-  { todo: true },
-  (t) => {
-    t.pass('A passing todo')
-    t.fail('A failing todo')
-    t.end()
-  },
-)
+test('A test set marked as "todo"', { todo: true }, (t) => {
+  t.pass('A passing todo')
+  t.fail('A failing todo')
+  t.end()
+})
 
 test('A slow test', async (t) => {
   await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -30,19 +26,15 @@ test('A slow test', async (t) => {
   t.end()
 })
 
-test(
-  'A test set marked as "skip"',
-  { skip: true },
-  async (t) => {
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    t.pass('A slow passing test')
-    await new Promise((resolve) => setTimeout(resolve, 75))
-    t.pass('A slow passing test')
-    await new Promise((resolve) => setTimeout(resolve, 50))
-    t.pass('A slow passing test')
-    t.end()
-  },
-)
+test('A test set marked as "skip"', { skip: true }, async (t) => {
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  t.pass('A slow passing test')
+  await new Promise((resolve) => setTimeout(resolve, 75))
+  t.pass('A slow passing test')
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  t.pass('A slow passing test')
+  t.end()
+})
 
 test('Some failing tests', (t) => {
   t.plan(3) // ! incorrect count is intentional

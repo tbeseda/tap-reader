@@ -11,7 +11,7 @@ Sample reporter that leverages `tap-reader`:
 ```js
 #!/usr/bin/env node
 import { stdin } from 'node:process';
-import TapReader from '../src/index.js'
+import TapReader from 'tap-reader'
 
 const write = console.log
 const reader = TapReader({ input: stdin });

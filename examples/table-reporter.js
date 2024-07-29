@@ -20,11 +20,11 @@ const chars = {
   'mid-mid': '',
   right: '',
   'right-mid': '',
-  middle: ' '
+  middle: ' ',
 }
 const table = new Table({
   head: ['EVENT', 'ID', 'DIRECTIVE', 'VALUE'],
-  chars
+  chars,
 })
 
 write(' ')
@@ -51,7 +51,9 @@ reader.on('fail', ({ id, desc, skip, todo, reason, diag }) => {
   directive += reason ? ` (${reason})` : ''
 
   table.push(['FAIL', id, directive, desc])
-  for (const key in diag) { table.push([null, null, null, `${key}: ${diag[key]}`]) }
+  for (const key in diag) {
+    table.push([null, null, null, `${key}: ${diag[key]}`])
+  }
 })
 
 reader.on('plan', ({ start, end, comment, todo }) => {
@@ -61,7 +63,7 @@ reader.on('plan', ({ start, end, comment, todo }) => {
 })
 
 reader.on('comment', ({ comment, todo, skip }) => {
-  if ((/^(tests|pass|fail)/).test(comment)) return // tape-specific: summary count
+  if (/^(tests|pass|fail)/.test(comment)) return // tape-specific: summary count
 
   write('•')
 
@@ -73,7 +75,9 @@ reader.on('comment', ({ comment, todo, skip }) => {
 reader.on('other', ({ line }) => {
   write('•')
 
-  if (line.trim().length > 0) { table.push(['OTHER', null, null, line]) }
+  if (line.trim().length > 0) {
+    table.push(['OTHER', null, null, line])
+  }
 })
 
 reader.on('done', ({ summary, failures, ok }) => {
@@ -96,7 +100,7 @@ reader.on('done', ({ summary, failures, ok }) => {
     [null, null, null, `fail: ${fail}`],
     [null, null, null, `skip: ${skip}`],
     [null, null, null, `todo: ${todo}`],
-    [null, null, null, `OK: ${ok}`]
+    [null, null, null, `OK: ${ok}`],
   )
 })
 

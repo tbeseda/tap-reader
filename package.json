@@ -1,34 +1,32 @@
 {
   "name": "tap-reader",
   "version": "0.1.0",
+  "author": "tbeseda",
+  "license": "Apache-2.0",
   "description": "A smol, streaming TAP parser.",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tbeseda/tap-reader.git"
   },
   "main": "src/index.js",
-  "type": "module",
   "bin": {
     "tap-reader": "src/index.js"
   },
-  "files": [
-    "src/"
-  ],
+  "files": ["src/"],
   "scripts": {
-    "lint": "eslint --ext .mjs --ext .js src/ test/",
-    "lint.fix": "npm run lint -- --fix",
+    "postinstall": "vendurl",
+    "lint": "biome ci",
+    "lint.fix": "biome check --write",
     "start": "tape test/tap/make-tap.js | node examples/table-reporter.js",
     "tape": "tape test/**/*-test.js",
-    "test": "npm run tape"
+    "test": "npm run lint && npm run tape"
   },
-  "author": "tbeseda",
-  "license": "Apache-2.0",
   "devDependencies": {
-    "cli-table3": "^0.6.3",
-    "eslint": "^8.52.0",
-    "eslint-config-standard": "^17.1.0",
-    "tape": "^5.7.2",
-    "vendurl": "^0.1.1"
+    "@biomejs/biome": "1.8.3",
+    "cli-table3": "^0.6.5",
+    "tape": "^5.8.1",
+    "vendurl": "^0.3.0"
   },
   "vendurl": {
     "destination": "src/vendor",
@@ -36,23 +34,5 @@
       "yaml.js": "yaml@2.3.2?target=es2021"
     }
   },
-  "eslintConfig": {
-    "extends": "standard",
-    "ignorePatterns": [
-      "src/vendor"
-    ],
-    "rules": {
-      "space-unary-ops": 0,
-      "comma-dangle": [
-        "error",
-        "always-multiline"
-      ]
-    }
-  },
-  "keywords": [
-    "tap",
-    "parser",
-    "testing",
-    "tape"
-  ]
+  "keywords": ["tap", "parser", "testing", "tape"]
 }

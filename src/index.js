@@ -2,8 +2,8 @@
 // TODO: pragma like +bail
 // TODO: subtest (TAP 14?) "# Subtest: <name>"
 
-import { createInterface } from 'readline'
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
+import { createInterface } from 'node:readline'
 import { parse as parseYAML } from './vendor/yaml.js'
 
 /**
@@ -17,7 +17,7 @@ import { parse as parseYAML } from './vendor/yaml.js'
  * @fires TapReaderEvents#done
  * @fires TapReaderEvents#end
  */
-class TapReaderEvents extends EventEmitter { }
+class TapReaderEvents extends EventEmitter {}
 
 /**
  * @param {object} options TapReader options
@@ -25,10 +25,11 @@ class TapReaderEvents extends EventEmitter { }
  * @param {boolean} [options.bail] bail on first failure
  * @returns {TapReaderEvents} TapReader events
  */
-function TapReader (options) {
+function TapReader(options) {
   const { input, bail: bailOption = false } = options
   if (!input) throw new Error('input stream required')
-  if (!(typeof input === 'object' && typeof input.on === 'function')) throw new Error('input should be a stream')
+  if (!(typeof input === 'object' && typeof input.on === 'function'))
+    throw new Error('input should be a stream')
   if (typeof bailOption !== 'boolean') throw new Error('bail should be a boolean')
 
   const events = new TapReaderEvents()
@@ -51,15 +52,12 @@ function TapReader (options) {
   let YAMLlines
   let YAMLing = false
 
-  function parseLine (line) {
+  function parseLine(line) {
     lines.push(line)
     events.emit('line', { line })
     const prevTest = tests[prevId]
 
-    if (
-      (prevLine.startsWith('not ok') || prevLine.startsWith('ok')) &&
-      !/^\s{2}-{3}$/.test(line)
-    ) {
+    if ((prevLine.startsWith('not ok') || prevLine.startsWith('ok')) && !/^\s{2}-{3}$/.test(line)) {
       // recent test doesn't have diag, emit it!
       if (prevTest.ok) {
         events.emit('pass', prevTest)
@@ -75,7 +73,8 @@ function TapReader (options) {
     if (YAMLing) {
       prevTest.lines.push(line)
 
-      if (/^\s{2}\.{3}$/.test(line)) { // "  ..." YAML block close
+      if (/^\s{2}\.{3}$/.test(line)) {
+        // "  ..." YAML block close
         YAMLing = false
 
         if (YAMLlines && YAMLlines.length > 0) {
@@ -87,13 +86,17 @@ function TapReader (options) {
       } else {
         YAMLlines.push(line)
       }
-    } else if (line.indexOf('Bail out!') >= 0) { // "Bail out!"
+    } else if (line.indexOf('Bail out!') >= 0) {
+      // "Bail out!"
       bail({ reason: '"Bail out!"' })
-    } else if (line.startsWith('TAP version ')) { // "TAP version"
+    } else if (line.startsWith('TAP version ')) {
+      // "TAP version"
       const version = line.split(' ').pop()
       events.emit('version', { line, version })
-    } else if (line.startsWith('ok')) { // "ok"
-      let [, id, desc, directive, reason] = line.match(/^ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || []
+    } else if (line.startsWith('ok')) {
+      // "ok"
+      let [, id, desc, directive, reason] =
+        line.match(/^ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || []
       const test = { ok: true, line, lines: [line], id, desc }
 
       if (directive) {
@@ -104,8 +107,10 @@ function TapReader (options) {
       const testId = `id:${id}`
       tests[testId] = test
       prevId = testId
-    } else if (line.startsWith('not ok')) { // "not ok"
-      let [, id, desc, directive, reason] = line.match(/^not ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || []
+    } else if (line.startsWith('not ok')) {
+      // "not ok"
+      let [, id, desc, directive, reason] =
+        line.match(/^not ok (\d+)(?: - |\s+)(.*?)(?: # (TODO|SKIP) ?(.*))?$/) || []
       const test = { ok: false, line, id, desc, lines: [line] }
 
       if (directive) {
@@ -118,14 +123,16 @@ function TapReader (options) {
       const testId = `id:${id}`
       tests[testId] = test
       prevId = testId
-    } else if (/^\s{2}-{3}$/.test(line)) { // "  ---" YAML block open
+    } else if (/^\s{2}-{3}$/.test(line)) {
+      // "  ---" YAML block open
       YAMLing = true
       YAMLlines = []
       prevTest.lines.push(line)
       prevTest.diag = {}
-    } else if (line.startsWith('1..')) { // "1..N" plan
-      let [, start, end, comment] = line.match(/^(\d+)\.\.(\d+)(?:\s*#\s*(.*))?$/) || [];
-      [start, end] = [start, end].map(Number)
+    } else if (line.startsWith('1..')) {
+      // "1..N" plan
+      let [, start, end, comment] = line.match(/^(\d+)\.\.(\d+)(?:\s*#\s*(.*))?$/) || []
+      ;[start, end] = [start, end].map(Number)
       const todo = end === 0
 
       const newPlan = { line, start, end, comment, todo }
@@ -134,7 +141,8 @@ function TapReader (options) {
       else plan = newPlan
 
       events.emit('plan', newPlan)
-    } else if (line.startsWith('# ')) { // "# " comment
+    } else if (line.startsWith('# ')) {
+      // "# " comment
       let comment = line.substring(2)
       let todo
       let skip
@@ -148,20 +156,23 @@ function TapReader (options) {
       }
 
       events.emit('comment', { line, comment, todo, skip })
-    } else { // other
+    } else {
+      // other
       events.emit('other', { line })
     }
 
     prevLine = line
   }
 
-  function bail (payload) { // bail
+  function bail(payload) {
+    // bail
     events.emit('bail', payload)
     bailed = true
     readline.close()
   }
 
-  function close () { // done + end
+  function close() {
+    // done + end
     let ok = !bailed
     const passing = {}
     const failures = {}

@@ -1,26 +1,28 @@
-import { Readable } from 'stream'
+import { Readable } from 'node:stream'
 import test from 'tape'
 import TapReader from '../src/index.js'
 
-test('TapReader: directives: TODO', t => {
+test('TapReader: directives: TODO', (t) => {
   t.plan(21)
 
   const input = new Readable()
   const reader = TapReader({ input })
 
-  input.push([
-    'TAP version 42',
-    // 'ok 1 # TODO',
-    'ok 2 description # TODO',
-    'ok 3 - description # TODO',
-    'ok 4 - description # TODO reason',
-    // 'not ok 5 # TODO',
-    'not ok 6 description # TODO',
-    'not ok 7 - description # TODO',
-    'not ok 8 - description # TODO reason',
-    '# TODO comment',
-    '1..0',
-  ].join('\n'))
+  input.push(
+    [
+      'TAP version 42',
+      // 'ok 1 # TODO',
+      'ok 2 description # TODO',
+      'ok 3 - description # TODO',
+      'ok 4 - description # TODO reason',
+      // 'not ok 5 # TODO',
+      'not ok 6 description # TODO',
+      'not ok 7 - description # TODO',
+      'not ok 8 - description # TODO reason',
+      '# TODO comment',
+      '1..0',
+    ].join('\n'),
+  )
   input.push(null)
 
   reader.on('pass', ({ id, desc, todo }) => {
@@ -76,24 +78,26 @@ test('TapReader: directives: TODO', t => {
   })
 })
 
-test('TapReader: directives: SKIP', t => {
+test('TapReader: directives: SKIP', (t) => {
   t.plan(20)
 
   const input = new Readable()
   const reader = TapReader({ input })
 
-  input.push([
-    'TAP version 42',
-    // 'ok 1 # SKIP',
-    'ok 2 description # SKIP',
-    'ok 3 - description # SKIP',
-    'ok 4 - description # SKIP reason',
-    // 'not ok 5 # SKIP',
-    'not ok 6 description # SKIP',
-    'not ok 7 - description # SKIP',
-    'not ok 8 - description # SKIP reason',
-    '# SKIP comment',
-  ].join('\n'))
+  input.push(
+    [
+      'TAP version 42',
+      // 'ok 1 # SKIP',
+      'ok 2 description # SKIP',
+      'ok 3 - description # SKIP',
+      'ok 4 - description # SKIP reason',
+      // 'not ok 5 # SKIP',
+      'not ok 6 description # SKIP',
+      'not ok 7 - description # SKIP',
+      'not ok 8 - description # SKIP reason',
+      '# SKIP comment',
+    ].join('\n'),
+  )
   input.push(null)
 
   reader.on('pass', ({ id, desc, skip }) => {

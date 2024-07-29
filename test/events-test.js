@@ -1,11 +1,11 @@
-import { createReadStream } from 'fs'
-import { join } from 'path'
+import { createReadStream } from 'node:fs'
+import { join } from 'node:path'
 import test from 'tape'
 import TapReader from '../src/index.js'
 
 const here = new URL('.', import.meta.url).pathname
 
-test('TapReader: events shapes', t => {
+test('TapReader: events shapes', (t) => {
   const input = createReadStream(join(here, 'tap', 'simple.tap'), 'utf8')
   const reader = TapReader({ input })
 
@@ -44,7 +44,11 @@ test('TapReader: events shapes', t => {
 
   reader.on('fail', ({ line, id, desc, skip, todo, diag }) => {
     t.ok(line, 'parsed line')
-    const expected = { message: 'First line invalid', severity: 'fail', data: { got: 'Flirble', expect: 'Fnible' } }
+    const expected = {
+      message: 'First line invalid',
+      severity: 'fail',
+      data: { got: 'Flirble', expect: 'Fnible' },
+    }
 
     t.equal(id, '2', 'fail.id')
     t.equal(desc, 'First line of the input valid', 'fail.desc')
@@ -66,50 +70,62 @@ test('TapReader: events shapes', t => {
 
     t.equal(typeof tests, 'object', 'done.tests: Object')
     t.equal(Object.keys(tests).length, 2, 'done.tests.length')
-    t.deepEqual(tests['id:1'], {
-      ok: true,
-      line: 'ok 1 - Input file opened # TODO Not written yet',
-      lines: ['ok 1 - Input file opened # TODO Not written yet'],
-      id: '1',
-      desc: 'Input file opened',
-      todo: 'Not written yet',
-    }, 'done.tests["id:1"]')
+    t.deepEqual(
+      tests['id:1'],
+      {
+        ok: true,
+        line: 'ok 1 - Input file opened # TODO Not written yet',
+        lines: ['ok 1 - Input file opened # TODO Not written yet'],
+        id: '1',
+        desc: 'Input file opened',
+        todo: 'Not written yet',
+      },
+      'done.tests["id:1"]',
+    )
 
     t.equal(typeof passing, 'object', 'done.passing: Object')
     t.equal(Object.keys(passing).length, 1, 'done.passing.length')
-    t.deepEqual(passing['id:1'], {
-      ok: true,
-      line: 'ok 1 - Input file opened # TODO Not written yet',
-      lines: ['ok 1 - Input file opened # TODO Not written yet'],
-      id: '1',
-      desc: 'Input file opened',
-      todo: 'Not written yet',
-    }, 'done.passing["id:1"]')
+    t.deepEqual(
+      passing['id:1'],
+      {
+        ok: true,
+        line: 'ok 1 - Input file opened # TODO Not written yet',
+        lines: ['ok 1 - Input file opened # TODO Not written yet'],
+        id: '1',
+        desc: 'Input file opened',
+        todo: 'Not written yet',
+      },
+      'done.passing["id:1"]',
+    )
 
     t.equal(typeof failures, 'object', 'done.failures: Object')
     t.equal(Object.keys(failures).length, 1, 'done.failures.length')
-    t.deepEqual(failures['id:2'], {
-      ok: false,
-      line: 'not ok 2 - First line of the input valid # SKIP Not implemented',
-      id: '2',
-      desc: 'First line of the input valid',
-      diag: {
-        message: 'First line invalid',
-        severity: 'fail',
-        data: { got: 'Flirble', expect: 'Fnible' },
+    t.deepEqual(
+      failures['id:2'],
+      {
+        ok: false,
+        line: 'not ok 2 - First line of the input valid # SKIP Not implemented',
+        id: '2',
+        desc: 'First line of the input valid',
+        diag: {
+          message: 'First line invalid',
+          severity: 'fail',
+          data: { got: 'Flirble', expect: 'Fnible' },
+        },
+        lines: [
+          'not ok 2 - First line of the input valid # SKIP Not implemented',
+          '  ---',
+          "  message: 'First line invalid'",
+          '  severity: fail',
+          '  data:',
+          "    got: 'Flirble'",
+          "    expect: 'Fnible'",
+          '  ...',
+        ],
+        skip: 'Not implemented',
       },
-      lines: [
-        'not ok 2 - First line of the input valid # SKIP Not implemented',
-        '  ---',
-        "  message: 'First line invalid'",
-        '  severity: fail',
-        '  data:',
-        "    got: 'Flirble'",
-        "    expect: 'Fnible'",
-        '  ...',
-      ],
-      skip: 'Not implemented',
-    }, 'done.failures["id:1"]')
+      'done.failures["id:1"]',
+    )
 
     t.notOk(ok, 'done: ok')
   })
@@ -118,7 +134,7 @@ test('TapReader: events shapes', t => {
     t.notOk(ok, 'end: ok')
   })
 
-  reader.on('error', err => {
+  reader.on('error', (err) => {
     t.fail(err)
   })
 })

@@ -16,7 +16,9 @@ reader.on('pass', ({ id, desc, skip, todo }) => {
 reader.on('fail', ({ id, desc, skip, todo, diag }) => {
   write('FAIL', id, desc, todo ? 'TODO' : skip ? 'SKIP' : '')
 
-  for (const key in diag) { write(`  ${key}: ${diag[key]}`) }
+  for (const key in diag) {
+    write(`  ${key}: ${diag[key]}`)
+  }
 })
 
 reader.on('plan', ({ start, end, comment, todo }) => {
