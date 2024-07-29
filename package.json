@@ -13,11 +13,9 @@
   "bin": {
     "tap-reader": "src/index.js"
   },
-  "files": [
-    "src/"
-  ],
+  "files": ["src/"],
   "scripts": {
-    "postinstall": "vendurl",
+    "vendurl": "vendurl",
     "lint": "biome ci",
     "lint.fix": "biome check --write",
     "start": "tape test/tap/make-tap.js | node examples/table-reporter.js",
@@ -36,10 +34,5 @@
       "yaml.js": "yaml@2.3.2?target=es2021"
     }
   },
-  "keywords": [
-    "tap",
-    "parser",
-    "testing",
-    "tape"
-  ]
+  "keywords": ["tap", "parser", "testing", "tape"]
 }
